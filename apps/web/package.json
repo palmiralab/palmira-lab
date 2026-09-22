@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "NODE_EXTRA_CA_CERTS=../../certs/russian_trusted_ca_bundle.pem next start",
     "lint": "eslint",
-    "test:classify": "NODE_EXTRA_CA_CERTS=../../certs/russian_trusted_ca_bundle.pem dotenv -e .env -- tsx scripts/test-classify.ts"
+    "test:classify": "NODE_EXTRA_CA_CERTS=../../certs/russian_trusted_ca_bundle.pem dotenv -e .env -- tsx scripts/test-classify.ts",
+    "test:classify-deepseek": "dotenv -e .env -- tsx scripts/test-classify-deepseek.ts"
   },
   "dependencies": {
     "next": "16.3.3",
