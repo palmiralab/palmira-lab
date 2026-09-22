@@ -1,4 +1,5 @@
 import { gigaChatProvider } from '@/lib/ai-provider/gigachat';
+import { mergeProposal } from '@/lib/ai-provider/merge';
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -9,11 +10,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await gigaChatProvider.classifyAndDraft({
+    const draft = await gigaChatProvider.classifyAndDraft({
       messages: [{ role: 'user', content: message }],
       answers: {},
     });
-    return Response.json(result);
+    return Response.json(mergeProposal(draft));
   } catch (err) {
     console.error('proposal generation failed', err);
     return Response.json({ error: 'Не удалось сгенерировать предложение' }, { status: 502 });

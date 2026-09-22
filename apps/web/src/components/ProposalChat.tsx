@@ -1,11 +1,18 @@
 'use client';
 
 import { useState } from 'react';
+import type { Proposal } from '@/lib/ai-provider/provider';
+
+// GigaChat иногда сам добавляет "- " в начало пунктов массива — при рендере
+// в <li> это задвоило бы буллет ("• - текст"), убираем.
+function stripBullet(text: string): string {
+  return text.replace(/^[-•]\s*/, '');
+}
 
 export function ProposalChat() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<unknown>(null);
+  const [result, setResult] = useState<Proposal | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit() {
@@ -29,7 +36,7 @@ export function ProposalChat() {
         return;
       }
 
-      setResult(data);
+      setResult(data as Proposal);
     } catch {
       setError('Не удалось связаться с сервером');
     } finally {
@@ -51,7 +58,52 @@ export function ProposalChat() {
         </button>
       </div>
       {error && <p>{error}</p>}
-      {result != null && <pre>{JSON.stringify(result, null, 2)}</pre>}
+      {result && (
+        <div>
+          <h2>{result.title}</h2>
+          <p>{result.problemSummary}</p>
+
+          <h3>Состав работ</h3>
+          <ul>
+            {result.scope.map((item, i) => (
+              <li key={i}>{stripBullet(item)}</li>
+            ))}
+          </ul>
+
+          <h3>Допущения</h3>
+          <ul>
+            {result.assumptions.map((item, i) => (
+              <li key={i}>{stripBullet(item)}</li>
+            ))}
+          </ul>
+
+          <h3>Что не входит</h3>
+          <ul>
+            {result.exclusions.map((item, i) => (
+              <li key={i}>{stripBullet(item)}</li>
+            ))}
+          </ul>
+
+          <p>
+            <strong>Стоимость:</strong>{' '}
+            {result.priceRangeMin != null && result.priceRangeMax != null
+              ? `${result.priceRangeMin}–${result.priceRangeMax} ₽`
+              : 'обсудим после уточнения деталей'}
+          </p>
+          <p>
+            <strong>Сроки:</strong>{' '}
+            {result.estimatedTimelineText ?? 'обсудим после уточнения деталей'}
+          </p>
+
+          <p>
+            <strong>Следующий шаг:</strong> {result.nextStep}
+          </p>
+
+          <p>
+            <small>{result.disclaimer}</small>
+          </p>
+        </div>
+      )}
     </div>
   );
 }
