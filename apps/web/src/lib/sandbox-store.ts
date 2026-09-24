@@ -9,9 +9,7 @@ export type SandboxPage = {
   expiresAt: number;
 };
 
-// Сейчас короткий TTL специально, чтобы легко проверять живьём — перед
-// UX-тестами (26-27.09) поднять до 5 минут.
-const TTL_MS = 2 * 60_000;
+const TTL_MS = 5 * 60_000;
 const CLEANUP_INTERVAL_MS = 60_000;
 
 // In-memory, как rate-limit.ts — не переживает рестарт процесса, не
