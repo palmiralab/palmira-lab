@@ -6,7 +6,6 @@ async function main() {
 
   const result = await deepSeekProvider.classifyAndDraft({
     messages: [{ role: 'user', content: message }],
-    answers: {},
   });
 
   console.log(JSON.stringify(result, null, 2));

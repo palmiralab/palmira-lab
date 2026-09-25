@@ -1,5 +1,5 @@
-import type { Proposal, ProposalGenerationProvider } from './provider';
-import { PROPOSAL_DRAFT_SYSTEM_PROMPT } from './prompts';
+import type { ModelResponse, ProposalGenerationProvider } from './provider';
+import { buildProposalSystemPrompt } from './prompts';
 
 const OAUTH_URL = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth';
 const COMPLETIONS_URL = 'https://api.giga.chat/v1/chat/completions';
@@ -56,28 +56,57 @@ type GigaChatCompletionsResponse = {
   }>;
 };
 
-const PROPOSAL_DRAFT_SCHEMA = {
+// Плоская схема без oneOf — type как дискриминатор, остальные поля
+// необязательные, required только ['type']. Подтверждено 25.09: работает
+// на GigaChat-2-Max, GigaChat-2 (Lite) сейчас возвращает пустой content
+// на любой response_format: json_schema независимо от формы схемы —
+// похоже на временную/специфичную для Lite деградацию API, не связанную
+// с нашим кодом (см. llm-nature-log.md).
+const MODEL_RESPONSE_SCHEMA = {
   type: 'object',
-  properties: {
-    serviceType: {
-      type: 'string',
-      enum: [
-        'telegram_automation',
-        'website_landing',
-        'content_automation',
-        'ai_consultation',
-        'manual_review',
-      ],
-      description: 'Категория услуги, к которой относится запрос клиента',
+  oneOf: [
+    {
+      type: 'object',
+      properties: {
+        type: { type: 'string', enum: ['question'] },
+        text: { type: 'string', description: 'Текст короткого уточняющего вопроса клиенту' },
+      },
+      required: ['type', 'text'],
     },
-    title: { type: 'string', description: 'Короткое название предложения' },
-    problemSummary: { type: 'string', description: 'Суть задачи клиента, как её понял ассистент' },
-    scope: { type: 'array', items: { type: 'string' }, description: 'Состав работ' },
-    assumptions: { type: 'array', items: { type: 'string' }, description: 'Допущения предложения' },
-    exclusions: { type: 'array', items: { type: 'string' }, description: 'Что явно не входит в объём' },
-    nextStep: { type: 'string', description: 'Следующий шаг для клиента' },
-  },
-  required: ['serviceType', 'title', 'problemSummary', 'scope', 'assumptions', 'exclusions', 'nextStep'],
+    {
+      type: 'object',
+      properties: {
+        type: { type: 'string', enum: ['proposal'] },
+        serviceType: {
+          type: 'string',
+          enum: [
+            'telegram_automation',
+            'website_landing',
+            'content_automation',
+            'ai_consultation',
+            'manual_review',
+          ],
+          description: 'Категория услуги, к которой относится запрос клиента',
+        },
+        title: { type: 'string', description: 'Короткое название предложения' },
+        problemSummary: { type: 'string', description: 'Суть задачи клиента, как её понял ассистент' },
+        scope: { type: 'array', items: { type: 'string' }, description: 'Состав работ' },
+        assumptions: { type: 'array', items: { type: 'string' }, description: 'Допущения предложения' },
+        exclusions: { type: 'array', items: { type: 'string' }, description: 'Что явно не входит в объём' },
+        nextStep: { type: 'string', description: 'Следующий шаг для клиента' },
+      },
+      required: [
+        'type',
+        'serviceType',
+        'title',
+        'problemSummary',
+        'scope',
+        'assumptions',
+        'exclusions',
+        'nextStep',
+      ],
+    },
+  ],
 } as const;
 
 async function requestCompletionContent(
@@ -101,7 +130,7 @@ async function requestCompletionContent(
         messages,
         response_format: {
           type: 'json_schema',
-          schema: PROPOSAL_DRAFT_SCHEMA,
+          schema: MODEL_RESPONSE_SCHEMA,
           strict: true,
         },
       }),
@@ -130,18 +159,22 @@ async function requestCompletionContent(
 }
 
 export const gigaChatProvider: ProposalGenerationProvider = {
-  async classifyAndDraft({ messages, answers }) {
+  async classifyAndDraft({ messages }) {
+    const questionsAsked = messages.filter((m) => m.role === 'assistant').length;
     const requestMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
-      { role: 'system', content: PROPOSAL_DRAFT_SYSTEM_PROMPT },
+      { role: 'system', content: buildProposalSystemPrompt(questionsAsked) },
       ...messages,
-      { role: 'user', content: `Уже собранные ответы клиента: ${JSON.stringify(answers)}` },
     ];
 
     let lastParseError: unknown;
     for (let attempt = 1; attempt <= MAX_JSON_PARSE_ATTEMPTS; attempt++) {
       const rawContent = await requestCompletionContent(requestMessages);
       try {
-        return JSON.parse(rawContent) as Partial<Proposal>;
+        const parsed = JSON.parse(rawContent) as { type?: unknown };
+        if (parsed.type !== 'question' && parsed.type !== 'proposal') {
+          throw new Error(`unexpected response type: ${String(parsed.type)}`);
+        }
+        return parsed as ModelResponse;
       } catch (err) {
         lastParseError = err;
       }

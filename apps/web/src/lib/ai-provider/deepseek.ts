@@ -1,5 +1,5 @@
-import type { Proposal, ProposalGenerationProvider, ServiceType } from './provider';
-import { DEEPSEEK_PROPOSAL_DRAFT_SYSTEM_PROMPT } from './prompts';
+import type { ModelResponse, ProposalGenerationProvider, ServiceType } from './provider';
+import { buildDeepSeekProposalSystemPrompt } from './prompts';
 
 const COMPLETIONS_URL = 'https://api.deepseek.com/chat/completions';
 const MODEL = 'deepseek-chat';
@@ -16,22 +16,31 @@ const VALID_SERVICE_TYPES: ServiceType[] = [
 
 // У DeepSeek response_format: json_object гарантирует только валидный
 // синтаксис JSON, не форму объекта — в отличие от strict-схемы GigaChat.
-// Эту проверку GigaChat делал за нас на уровне API, здесь её приходится
-// писать самим.
-function isValidProposalDraft(value: unknown): value is Partial<Proposal> {
+// Эту проверку GigaChat делал за нас на уровне API (с той же оговоркой,
+// что и там — каст не проверяет рантайм, но там хотя бы схема сервера
+// реально enforced; здесь — нет никакой). Проверяем обе ветки union сами.
+function isValidModelResponse(value: unknown): value is ModelResponse {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;
 
-  return (
-    typeof v.serviceType === 'string' &&
-    VALID_SERVICE_TYPES.includes(v.serviceType as ServiceType) &&
-    typeof v.title === 'string' &&
-    typeof v.problemSummary === 'string' &&
-    Array.isArray(v.scope) && v.scope.every((x) => typeof x === 'string') &&
-    Array.isArray(v.assumptions) && v.assumptions.every((x) => typeof x === 'string') &&
-    Array.isArray(v.exclusions) && v.exclusions.every((x) => typeof x === 'string') &&
-    typeof v.nextStep === 'string'
-  );
+  if (v.type === 'question') {
+    return typeof v.text === 'string';
+  }
+
+  if (v.type === 'proposal') {
+    return (
+      typeof v.serviceType === 'string' &&
+      VALID_SERVICE_TYPES.includes(v.serviceType as ServiceType) &&
+      typeof v.title === 'string' &&
+      typeof v.problemSummary === 'string' &&
+      Array.isArray(v.scope) && v.scope.every((x) => typeof x === 'string') &&
+      Array.isArray(v.assumptions) && v.assumptions.every((x) => typeof x === 'string') &&
+      Array.isArray(v.exclusions) && v.exclusions.every((x) => typeof x === 'string') &&
+      typeof v.nextStep === 'string'
+    );
+  }
+
+  return false;
 }
 
 type DeepSeekCompletionsResponse = {
@@ -89,11 +98,11 @@ async function requestCompletionContent(
 }
 
 export const deepSeekProvider: ProposalGenerationProvider = {
-  async classifyAndDraft({ messages, answers }) {
+  async classifyAndDraft({ messages }) {
+    const questionsAsked = messages.filter((m) => m.role === 'assistant').length;
     const requestMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
-      { role: 'system', content: DEEPSEEK_PROPOSAL_DRAFT_SYSTEM_PROMPT },
+      { role: 'system', content: buildDeepSeekProposalSystemPrompt(questionsAsked) },
       ...messages,
-      { role: 'user', content: `Уже собранные ответы клиента: ${JSON.stringify(answers)}` },
     ];
 
     let lastError: unknown;
@@ -101,8 +110,8 @@ export const deepSeekProvider: ProposalGenerationProvider = {
       const rawContent = await requestCompletionContent(requestMessages);
       try {
         const parsed: unknown = JSON.parse(rawContent);
-        if (!isValidProposalDraft(parsed)) {
-          throw new Error('DeepSeek response does not match the expected Proposal shape');
+        if (!isValidModelResponse(parsed)) {
+          throw new Error('DeepSeek response does not match the expected shape');
         }
         return parsed;
       } catch (err) {

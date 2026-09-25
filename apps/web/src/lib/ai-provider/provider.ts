@@ -24,9 +24,12 @@ export type Proposal = {
   status: 'draft' | 'shown' | 'contact_collected' | 'sent' | 'accepted' | 'rejected';
 };
 
+export type ModelResponse =
+  | { type: 'question'; text: string }
+  | ({ type: 'proposal' } & Partial<Proposal>);
+
 export interface ProposalGenerationProvider {
   classifyAndDraft(input: {
     messages: Array<{ role: 'user' | 'assistant'; content: string }>;
-    answers: Record<string, string>;
-  }): Promise<Partial<Proposal>>;
+  }): Promise<ModelResponse>;
 }
