@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Proposal } from '@/lib/ai-provider/provider';
 import { TypingIndicator } from '@/components/TypingIndicator';
 import { ProgressIndicator } from '@/components/ProgressIndicator';
@@ -44,6 +44,20 @@ export function ProposalChat() {
   const [contactName, setContactName] = useState('');
   const [contactValue, setContactValue] = useState('');
   const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+
+  const draftInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Роман печатает "вслепую" (не глядя на экран) — фокус сам должен
+  // оказаться в поле ввода каждый раз, как оно снова готово принимать текст
+  // (пришёл новый вопрос — 'idle', либо провал после автопопыток, текст
+  // можно сразу отправить ещё раз — 'error'), иначе набранное на автомате
+  // проскакивает мимо. Пока поле disabled ('waiting_reply') — фокусить
+  // некуда, браузер всё равно не даст.
+  useEffect(() => {
+    if (state === 'idle' || state === 'error') {
+      draftInputRef.current?.focus();
+    }
+  }, [state]);
 
   async function handleSend() {
     const content = draft.trim();
@@ -160,6 +174,7 @@ export function ProposalChat() {
         <>
           <ProgressIndicator questionsAsked={questionsAsked} />
           <textarea
+            ref={draftInputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder={messages.length === 0 ? 'Опишите, что нужно сделать' : 'Ваш ответ'}
