@@ -1,47 +1,16 @@
-import type { ModelResponse, ProposalGenerationProvider, ServiceType } from './provider';
-import { buildDeepSeekProposalSystemPrompt } from './prompts';
+import type { ProposalGenerationProvider } from './provider';
+import { buildTextJsonProposalSystemPrompt } from './prompts';
+import { isValidModelResponse } from './validate-model-response';
 
 const COMPLETIONS_URL = 'https://api.deepseek.com/chat/completions';
 const MODEL = 'deepseek-chat';
 const REQUEST_TIMEOUT_MS = 30_000;
 const MAX_VALIDATION_ATTEMPTS = 3;
 
-const VALID_SERVICE_TYPES: ServiceType[] = [
-  'telegram_automation',
-  'website_landing',
-  'content_automation',
-  'ai_consultation',
-  'manual_review',
-];
-
 // У DeepSeek response_format: json_object гарантирует только валидный
-// синтаксис JSON, не форму объекта — в отличие от strict-схемы GigaChat.
-// Эту проверку GigaChat делал за нас на уровне API (с той же оговоркой,
-// что и там — каст не проверяет рантайм, но там хотя бы схема сервера
-// реально enforced; здесь — нет никакой). Проверяем обе ветки union сами.
-function isValidModelResponse(value: unknown): value is ModelResponse {
-  if (typeof value !== 'object' || value === null) return false;
-  const v = value as Record<string, unknown>;
-
-  if (v.type === 'question') {
-    return typeof v.text === 'string';
-  }
-
-  if (v.type === 'proposal') {
-    return (
-      typeof v.serviceType === 'string' &&
-      VALID_SERVICE_TYPES.includes(v.serviceType as ServiceType) &&
-      typeof v.title === 'string' &&
-      typeof v.problemSummary === 'string' &&
-      Array.isArray(v.scope) && v.scope.every((x) => typeof x === 'string') &&
-      Array.isArray(v.assumptions) && v.assumptions.every((x) => typeof x === 'string') &&
-      Array.isArray(v.exclusions) && v.exclusions.every((x) => typeof x === 'string') &&
-      typeof v.nextStep === 'string'
-    );
-  }
-
-  return false;
-}
+// синтаксис JSON, не форму объекта — никакой серверной гарантии формы нет,
+// проверяем обе ветки union сами (isValidModelResponse, общая с GigaChat —
+// у него с 26.09 та же ситуация, см. gigachat.ts).
 
 type DeepSeekCompletionsResponse = {
   choices: Array<{
@@ -101,7 +70,7 @@ export const deepSeekProvider: ProposalGenerationProvider = {
   async classifyAndDraft({ messages }) {
     const questionsAsked = messages.filter((m) => m.role === 'assistant').length;
     const requestMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
-      { role: 'system', content: buildDeepSeekProposalSystemPrompt(questionsAsked) },
+      { role: 'system', content: buildTextJsonProposalSystemPrompt(questionsAsked) },
       ...messages,
     ];
 

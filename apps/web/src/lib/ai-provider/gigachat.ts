@@ -1,12 +1,12 @@
 import type { ModelResponse, ProposalGenerationProvider } from './provider';
-import { buildProposalSystemPrompt } from './prompts';
+import { buildProposalSystemPrompt, buildTextJsonProposalSystemPrompt } from './prompts';
+import { isValidModelResponse } from './validate-model-response';
 
 const OAUTH_URL = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth';
 const COMPLETIONS_URL = 'https://api.giga.chat/v1/chat/completions';
 const MODEL = process.env.GIGACHAT_MODEL || 'GigaChat-2-Max';
 const REQUEST_TIMEOUT_MS = 30_000;
 const TOKEN_REFRESH_MARGIN_MS = 60_000;
-const MAX_JSON_PARSE_ATTEMPTS = 3;
 
 type CachedToken = {
   accessToken: string;
@@ -56,12 +56,131 @@ type GigaChatCompletionsResponse = {
   }>;
 };
 
-// Плоская схема без oneOf — type как дискриминатор, остальные поля
-// необязательные, required только ['type']. Подтверждено 25.09: работает
-// на GigaChat-2-Max, GigaChat-2 (Lite) сейчас возвращает пустой content
-// на любой response_format: json_schema независимо от формы схемы —
-// похоже на временную/специфичную для Lite деградацию API, не связанную
-// с нашим кодом (см. llm-nature-log.md).
+// ============================================================================
+// Активная реализация (с 26.09) — обычный текстовый ответ, без response_format.
+//
+// Причина: и response_format: json_schema (строгая схема, была здесь раньше),
+// и response_format: json_object (loose-режим, как у DeepSeek) у GigaChat
+// сейчас нестабильны — детерминированно возвращают пустой content на части
+// вводов (например, "авито" одним словом — 5/5 пусто), у GigaChat-2 Lite
+// почти на любом вводе. Без response_format вообще — стабильно, 3/3 на
+// обоих тирах, включая ровно те вводы, которые ломали строгий режим.
+// Полный разбор с контрольными тестами — dev/palmira-lab-notes/llm-nature-log.md,
+// записи 26.09. Deprecated-реализация со строгой схемой сохранена ниже
+// (gigaChatProviderStrictSchema) для справки/обсуждения — не используется.
+// ============================================================================
+
+const MAX_VALIDATION_ATTEMPTS = 3;
+
+async function requestCompletionContent(
+  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
+): Promise<string> {
+  const accessToken = await getAccessToken();
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(COMPLETIONS_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ model: MODEL, messages }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error(`GigaChat request timed out after ${REQUEST_TIMEOUT_MS}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!response.ok) {
+    throw new Error(`GigaChat completions failed: ${response.status} ${await response.text()}`);
+  }
+
+  const data = (await response.json()) as GigaChatCompletionsResponse;
+  const rawContent = data.choices?.[0]?.message?.content;
+  if (typeof rawContent !== 'string') {
+    throw new Error('GigaChat response missing message content');
+  }
+
+  return rawContent;
+}
+
+// Модель без response_format иногда оборачивает JSON в markdown-код-блок
+// (```json ... ```) или добавляет пояснение вокруг, хотя промпт просит не
+// делать этого — без серверной гарантии формата это не баг, а такая же
+// вещь, с которой уже живёт DeepSeek. Вырезаем блок кода, если он есть,
+// прежде чем пытаться JSON.parse.
+function extractJsonFromContent(rawContent: string): string {
+  const fencedMatch = rawContent.match(/```(?:json)?\s*([\s\S]*?)```/);
+  return (fencedMatch ? fencedMatch[1] : rawContent).trim();
+}
+
+export const gigaChatProvider: ProposalGenerationProvider = {
+  async classifyAndDraft({ messages }) {
+    const questionsAsked = messages.filter((m) => m.role === 'assistant').length;
+    const requestMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: buildTextJsonProposalSystemPrompt(questionsAsked) },
+      ...messages,
+    ];
+
+    let lastError: unknown;
+    let lastNonEmptyContent = '';
+    for (let attempt = 1; attempt <= MAX_VALIDATION_ATTEMPTS; attempt++) {
+      const rawContent = await requestCompletionContent(requestMessages);
+      if (rawContent.trim()) {
+        lastNonEmptyContent = rawContent.trim();
+      }
+      try {
+        const parsed: unknown = JSON.parse(extractJsonFromContent(rawContent));
+        if (!isValidModelResponse(parsed)) {
+          throw new Error('GigaChat response does not match the expected shape');
+        }
+        return parsed;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    // Временный fallback (26.09, см. llm-nature-log.md) — на некоторых
+    // конкретных вводах (найден один конкретный: реплика "На авито и
+    // телеграм" именно как ОТВЕТ на предыдущий вопрос, не как первое
+    // сообщение) модель стабильно игнорирует инструкцию формата и отвечает
+    // обычным текстом вместо JSON, во всех наблюдавшихся случаях —
+    // содержательным уточняющим вопросом, не мусором. Раз ни один из
+    // MAX_VALIDATION_ATTEMPTS не дал валидный JSON, но живой текст есть —
+    // считаем его уточняющим вопросом, а не рушим диалог ошибкой. Если
+    // контента не было вообще (пустая строка — старый баг деградации,
+    // см. Тему 8 pm-explainer.md) — fallback пуст, кидаем обычную ошибку.
+    // Пересмотреть после первых внешних тестовых прогонов (через
+    // несколько дней) — не постоянное решение, эвристика может маскировать
+    // случаи, где текст модели НЕ является вопросом.
+    if (lastNonEmptyContent) {
+      return { type: 'question', text: lastNonEmptyContent };
+    }
+
+    throw new Error(
+      `GigaChat returned invalid/malformed JSON after ${MAX_VALIDATION_ATTEMPTS} attempts: ${String(lastError)}`,
+    );
+  },
+};
+
+// ============================================================================
+// DEPRECATED, не используется — оставлено по просьбе Романа для справки и
+// обсуждения на собеседованиях (строгая схема / structured output — тема
+// сама по себе интересная и правильная, просто текущая реализация GigaChat
+// её нестабильно поддерживает, см. разбор выше). Не импортируется route.ts.
+// ============================================================================
+
+const MAX_JSON_PARSE_ATTEMPTS = 3;
+
 const MODEL_RESPONSE_SCHEMA = {
   type: 'object',
   oneOf: [
@@ -109,7 +228,7 @@ const MODEL_RESPONSE_SCHEMA = {
   ],
 } as const;
 
-async function requestCompletionContent(
+async function requestCompletionContentStrictSchema(
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
 ): Promise<string> {
   const accessToken = await getAccessToken();
@@ -158,7 +277,7 @@ async function requestCompletionContent(
   return rawContent;
 }
 
-export const gigaChatProvider: ProposalGenerationProvider = {
+export const gigaChatProviderStrictSchema: ProposalGenerationProvider = {
   async classifyAndDraft({ messages }) {
     const questionsAsked = messages.filter((m) => m.role === 'assistant').length;
     const requestMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
@@ -168,7 +287,7 @@ export const gigaChatProvider: ProposalGenerationProvider = {
 
     let lastParseError: unknown;
     for (let attempt = 1; attempt <= MAX_JSON_PARSE_ATTEMPTS; attempt++) {
-      const rawContent = await requestCompletionContent(requestMessages);
+      const rawContent = await requestCompletionContentStrictSchema(requestMessages);
       try {
         const parsed = JSON.parse(rawContent) as { type?: unknown };
         if (parsed.type !== 'question' && parsed.type !== 'proposal') {

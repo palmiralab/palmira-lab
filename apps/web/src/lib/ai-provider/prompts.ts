@@ -78,12 +78,14 @@ ${buildResponseModeInstruction(questionsAsked)}
 ${PROMPT_INJECTION_GUARD}`;
 }
 
-// Для DeepSeek (в отличие от GigaChat) форму JSON-ответа не задаёт отдельная
-// строгая схема — response_format: json_object гарантирует только валидный
-// синтаксис, не форму. Поэтому обе формы (question/proposal) приходится
-// расписывать текстом прямо здесь, и в коде (deepseek.ts) добавляется своя
-// валидация после парсинга.
-export function buildDeepSeekProposalSystemPrompt(questionsAsked: number): string {
+// Общий текстовый промпт для провайдеров БЕЗ серверной гарантии формы JSON —
+// раньше был только у DeepSeek (response_format: json_object валидирует
+// синтаксис, не форму), с 26.09 то же самое у GigaChat (response_format:
+// json_schema/json_object у него нестабилен, см. llm-nature-log.md 26.09 —
+// пришлось перейти на обычный текстовый ответ). Обе формы (question/proposal)
+// приходится расписывать текстом прямо здесь, валидация после парсинга —
+// validate-model-response.ts, общая для обоих провайдеров.
+export function buildTextJsonProposalSystemPrompt(questionsAsked: number): string {
   return `Ты ведёшь короткий диалог с клиентом, чтобы понять его задачу и
 подготовить черновик коммерческого предложения для студии автоматизации.
 
