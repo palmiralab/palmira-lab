@@ -2,65 +2,117 @@
 
 import { useState } from 'react';
 import type { Proposal } from '@/lib/ai-provider/provider';
+import { TypingIndicator } from '@/components/TypingIndicator';
+import { ProgressIndicator } from '@/components/ProgressIndicator';
+import { ProposalCard } from '@/components/ProposalCard';
+import { inputClass, primaryButtonClass } from '@/lib/ui-classes';
 
-// GigaChat иногда сам добавляет "- " в начало пунктов массива — при рендере
-// в <li> это задвоило бы буллет ("• - текст"), убираем.
-function stripBullet(text: string): string {
-  return text.replace(/^[-•]\s*/, '');
+// Ровно то, что уходит в POST /api/proposal messages[] — история диалога,
+// без финальной карточки КП (она не текст, отдельное состояние `proposal`,
+// и диалог на ней всегда завершается, дальше в messages не попадает).
+type ChatMessage = { role: 'user' | 'assistant'; content: string };
+
+// Урезано относительно §11.2 session-plan.md для MVP: `sending` слит с
+// `waiting_reply` (между кликом и появлением индикатора набора текста нет
+// отдельного видимого состояния), `rate_limited` — это просто текст в
+// `error` (сервер и так возвращает понятное сообщение на 429),
+// `restart_confirm` — фичи "начать заново" ещё нет.
+type ChatState = 'idle' | 'waiting_reply' | 'collecting_contact' | 'completed' | 'error';
+
+// Роман попросил не показывать 502 сразу — конкретное число не называл,
+// 3 выбрано по аналогии с MAX_JSON_PARSE_ATTEMPTS на сервере (та же
+// вероятностная природа сбоя), несложно подправить, если окажется мало/много.
+const MAX_SEND_ATTEMPTS = 3;
+
+// Растущая пауза перед повтором (500мс, потом 1000мс) — предположение
+// Романа: несколько сбоев подряд без паузы может быть не независимыми
+// случайностями, а коротким "плохим" окном у самого GigaChat, и мгновенный
+// повтор просто попадает в то же окно. Перед первой попыткой паузы нет.
+const RETRY_BASE_DELAY_MS = 500;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const inputClass =
-  'w-full rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 ' +
-  'focus:border-emerald-600 focus:outline-none ' +
-  'dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-emerald-400';
-const primaryButtonClass =
-  'w-full rounded bg-emerald-600 px-4 py-2 font-medium text-white disabled:opacity-50 sm:w-auto ' +
-  'dark:bg-emerald-400 dark:text-slate-950';
-
 export function ProposalChat() {
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<Proposal | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [draft, setDraft] = useState('');
+  const [state, setState] = useState<ChatState>('idle');
+  const [proposal, setProposal] = useState<Proposal | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [contactName, setContactName] = useState('');
   const [contactValue, setContactValue] = useState('');
   const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
-  async function handleSubmit() {
-    if (!message.trim()) return;
+  async function handleSend() {
+    const content = draft.trim();
+    if (!content || state === 'waiting_reply') return;
 
-    setLoading(true);
+    // Если прошлая попытка провалилась насовсем (state === 'error'), последняя
+    // запись в messages — та самая непринятая реплика (по устройству стейт-машины
+    // иначе state в 'error' не попадает). Повторная отправка заменяет её, а не
+    // добавляет вторую копию поверх — чтобы ручной повтор после исчерпания
+    // автопопыток не плодил дубли в треде.
+    const nextMessages: ChatMessage[] =
+      state === 'error'
+        ? [...messages.slice(0, -1), { role: 'user', content }]
+        : [...messages, { role: 'user', content }];
+    setMessages(nextMessages);
     setError(null);
-    setResult(null);
-    setContactStatus('idle');
-    setContactName('');
-    setContactValue('');
+    setState('waiting_reply');
 
-    try {
-      const response = await fetch('/api/proposal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message }),
-      });
+    // 502 от /api/proposal — это исчерпанные внутренние (серверные) попытки
+    // распарсить JSON от GigaChat (см. MAX_JSON_PARSE_ATTEMPTS в gigachat.ts),
+    // не детерминированная ошибка запроса — есть смысл повторить весь HTTP-вызов
+    // ещё раз с тем же nextMessages, не только внутренний парсинг. 400/429 сюда
+    // не попадают — это не транзиентные сбои, повтор с теми же данными их не
+    // исправит.
+    for (let attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt++) {
+      try {
+        const response = await fetch('/api/proposal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: nextMessages }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        setError(typeof data?.error === 'string' ? data.error : 'Что-то пошло не так');
+        if (!response.ok) {
+          if (response.status === 502 && attempt < MAX_SEND_ATTEMPTS) {
+            await delay(RETRY_BASE_DELAY_MS * attempt);
+            continue;
+          }
+          setDraft(content);
+          setError(typeof data?.error === 'string' ? data.error : 'Что-то пошло не так');
+          setState('error');
+          return;
+        }
+
+        setDraft('');
+        if (data.type === 'question') {
+          setMessages([...nextMessages, { role: 'assistant', content: data.text }]);
+          setState('idle');
+        } else {
+          setProposal(data.proposal as Proposal);
+          setState('collecting_contact');
+        }
+        return;
+      } catch {
+        if (attempt < MAX_SEND_ATTEMPTS) {
+          await delay(RETRY_BASE_DELAY_MS * attempt);
+          continue;
+        }
+        setDraft(content);
+        setError('Не удалось связаться с сервером');
+        setState('error');
         return;
       }
-
-      setResult(data as Proposal);
-    } catch {
-      setError('Не удалось связаться с сервером');
-    } finally {
-      setLoading(false);
     }
   }
 
   async function handleContactSubmit() {
-    if (!contactName.trim() || !contactValue.trim() || !result) return;
+    if (!contactName.trim() || !contactValue.trim() || !proposal) return;
 
     setContactStatus('sending');
 
@@ -68,124 +120,77 @@ export function ProposalChat() {
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: contactName, contact: contactValue, proposalId: result.id }),
+        body: JSON.stringify({ name: contactName, contact: contactValue, proposalId: proposal.id }),
       });
 
-      setContactStatus(response.ok ? 'sent' : 'error');
+      if (response.ok) {
+        setContactStatus('sent');
+        setState('completed');
+      } else {
+        setContactStatus('error');
+      }
     } catch {
       setContactStatus('error');
     }
   }
 
+  const questionsAsked = messages.filter((m) => m.role === 'assistant').length;
+
   return (
     <div className="flex flex-col gap-3">
-      <textarea
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder="Опишите, что нужно сделать"
-        rows={4}
-        className={inputClass}
-      />
-      <div>
-        <button onClick={handleSubmit} disabled={loading} className={primaryButtonClass}>
-          {loading ? 'Отправляю...' : 'Отправить'}
-        </button>
-      </div>
+      {messages.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              className={
+                m.role === 'user'
+                  ? 'self-end rounded-lg bg-emerald-600 px-3 py-2 text-white dark:bg-emerald-400 dark:text-slate-950'
+                  : 'self-start rounded-lg bg-slate-100 px-3 py-2 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
+              }
+            >
+              {m.content}
+            </div>
+          ))}
+          {state === 'waiting_reply' && <TypingIndicator />}
+        </div>
+      )}
+
+      {!proposal && (
+        <>
+          <ProgressIndicator questionsAsked={questionsAsked} />
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={messages.length === 0 ? 'Опишите, что нужно сделать' : 'Ваш ответ'}
+            rows={3}
+            disabled={state === 'waiting_reply'}
+            className={inputClass}
+          />
+          <div>
+            <button
+              onClick={handleSend}
+              disabled={state === 'waiting_reply' || !draft.trim()}
+              className={primaryButtonClass}
+            >
+              {state === 'waiting_reply' ? 'Отправляю...' : 'Отправить'}
+            </button>
+          </div>
+        </>
+      )}
       {error && (
         <p className="animate-[fade-in-up_0.2s_ease-out] text-red-600 dark:text-red-400">{error}</p>
       )}
-      {result && (
-        <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{result.title}</h2>
-            <p className="mt-1 text-slate-600 dark:text-slate-400">{result.problemSummary}</p>
-          </div>
-
-          <div>
-            <h3 className="font-medium text-slate-900 dark:text-slate-100">Состав работ</h3>
-            <ul className="mt-1 list-disc space-y-1 pl-5 text-slate-700 dark:text-slate-300">
-              {result.scope.map((item, i) => (
-                <li key={i}>{stripBullet(item)}</li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-medium text-slate-900 dark:text-slate-100">Допущения</h3>
-            <ul className="mt-1 list-disc space-y-1 pl-5 text-slate-700 dark:text-slate-300">
-              {result.assumptions.map((item, i) => (
-                <li key={i}>{stripBullet(item)}</li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-medium text-slate-900 dark:text-slate-100">Что не входит</h3>
-            <ul className="mt-1 list-disc space-y-1 pl-5 text-slate-700 dark:text-slate-300">
-              {result.exclusions.map((item, i) => (
-                <li key={i}>{stripBullet(item)}</li>
-              ))}
-            </ul>
-          </div>
-
-          <p className="text-slate-800 dark:text-slate-200">
-            <strong>Стоимость:</strong>{' '}
-            {result.priceRangeMin != null && result.priceRangeMax != null
-              ? `${result.priceRangeMin}–${result.priceRangeMax} ₽`
-              : 'обсудим после уточнения деталей'}
-          </p>
-          <p className="text-slate-800 dark:text-slate-200">
-            <strong>Сроки:</strong>{' '}
-            {result.estimatedTimelineText ?? 'обсудим после уточнения деталей'}
-          </p>
-
-          <p className="text-slate-800 dark:text-slate-200">
-            <strong>Следующий шаг:</strong> {result.nextStep}
-          </p>
-
-          <p className="text-sm text-slate-500">
-            <small>{result.disclaimer}</small>
-          </p>
-
-          {contactStatus === 'sent' ? (
-            <p className="text-emerald-700 dark:text-emerald-400">
-              Спасибо! Мы свяжемся с вами, чтобы уточнить детали.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-2 border-t border-slate-200 pt-4 dark:border-slate-800">
-              <h3 className="font-medium text-slate-900 dark:text-slate-100">Оставить контакт</h3>
-              <p className="text-sm text-slate-500">
-                <small>Чтобы связаться и уточнить предложение — ничего лишнего не собираем.</small>
-              </p>
-              <input
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-                placeholder="Имя"
-                className={inputClass}
-              />
-              <input
-                value={contactValue}
-                onChange={(e) => setContactValue(e.target.value)}
-                placeholder="Телефон, email или Telegram"
-                className={inputClass}
-              />
-              <div>
-                <button
-                  onClick={handleContactSubmit}
-                  disabled={contactStatus === 'sending'}
-                  className={primaryButtonClass}
-                >
-                  {contactStatus === 'sending' ? 'Отправляю...' : 'Отправить контакт'}
-                </button>
-              </div>
-              {contactStatus === 'error' && (
-                <p className="animate-[fade-in-up_0.2s_ease-out] text-red-600 dark:text-red-400">
-                  Не удалось отправить, попробуйте ещё раз
-                </p>
-              )}
-            </div>
-          )}
-        </div>
+      {proposal && (
+        <ProposalCard
+          proposal={proposal}
+          contactName={contactName}
+          contactValue={contactValue}
+          contactStatus={contactStatus}
+          onContactNameChange={setContactName}
+          onContactValueChange={setContactValue}
+          onContactSubmit={handleContactSubmit}
+        />
       )}
     </div>
   );
