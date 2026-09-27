@@ -162,13 +162,37 @@ export const gigaChatProvider: ProposalGenerationProvider = {
     // Пересмотреть после первых внешних тестовых прогонов (через
     // несколько дней) — не постоянное решение, эвристика может маскировать
     // случаи, где текст модели НЕ является вопросом.
-    if (lastNonEmptyContent) {
+    //
+    // Сужено 27.09 (см. day-plan-2026-09-27.md, найдено Романом) — не
+    // применять этот fallback, если сырой текст похож на JSON (начинается
+    // с { или [): в наблюдавшемся случае модель перепутала serviceType:
+    // "manual_review" с верхнеуровневым type и вернула `{ "type":
+    // "manual_review" }` — синтаксически валидный, но не проходящий
+    // isValidModelResponse JSON, и старый fallback показывал эту сырую
+    // строку посетителю как "уточняющий вопрос".
+    const looksLikeJson = /^[{[]/.test(lastNonEmptyContent);
+    if (lastNonEmptyContent && !looksLikeJson) {
       return { type: 'question', text: lastNonEmptyContent };
     }
 
-    throw new Error(
-      `GigaChat returned invalid/malformed JSON after ${MAX_VALIDATION_ATTEMPTS} attempts: ${String(lastError)}`,
+    // 27.09 (продолжение) — вместо ошибки просим пользователя переформулировать,
+    // а не рушим диалог. requestCompletionContent выше НЕ обёрнут в try/catch —
+    // настоящие сетевые/API-сбои (таймаут, не-2xx от GigaChat) вылетают из цикла
+    // сразу и наверх, не долетая до этой точки. Сюда попадают только случаи,
+    // когда GigaChat трижды подряд честно что-то ответил (лог lastError это
+    // подтверждает), просто ни разу не в валидном формате — JSON-подобный
+    // мусор (looksLikeJson выше) или совсем пустой content (старый баг
+    // деградации, Тема 8 pm-explainer.md). В обоих случаях канал связи жив,
+    // просто конкретный ввод не задался модели — переформулировка почти
+    // всегда даёт разный (обычно рабочий) результат, честная ошибка тут не
+    // нужнее, чем при обычном непонятном вопросе от посетителя.
+    console.error(
+      `GigaChat format failure after ${MAX_VALIDATION_ATTEMPTS} attempts, asking user to rephrase: ${String(lastError)}`,
     );
+    return {
+      type: 'question',
+      text: 'Не получилось разобрать ваш последний ответ — не могли бы вы переформулировать его другими словами?',
+    };
   },
 };
 
