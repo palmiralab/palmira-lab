@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Proposal } from '@/lib/ai-provider/provider';
 import { inputClass, primaryButtonClass } from '@/lib/ui-classes';
 
@@ -15,6 +16,7 @@ type ProposalCardProps = {
   onContactNameChange: (value: string) => void;
   onContactValueChange: (value: string) => void;
   onContactSubmit: () => void;
+  restartControl?: ReactNode;
 };
 
 export function ProposalCard({
@@ -25,6 +27,7 @@ export function ProposalCard({
   onContactNameChange,
   onContactValueChange,
   onContactSubmit,
+  restartControl,
 }: ProposalCardProps) {
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
@@ -80,9 +83,12 @@ export function ProposalCard({
       </p>
 
       {contactStatus === 'sent' ? (
-        <p className="text-emerald-700 dark:text-emerald-400">
-          Спасибо! Мы свяжемся с вами, чтобы уточнить детали.
-        </p>
+        <div className="flex flex-col items-start gap-2 border-t border-slate-200 pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-emerald-700 dark:text-emerald-400">
+            Спасибо! Мы свяжемся с вами, чтобы уточнить детали.
+          </p>
+          {restartControl}
+        </div>
       ) : (
         <div className="flex flex-col gap-2 border-t border-slate-200 pt-4 dark:border-slate-800">
           <h3 className="font-medium text-slate-900 dark:text-slate-100">Оставить контакт</h3>
@@ -101,7 +107,7 @@ export function ProposalCard({
             placeholder="Телефон, email или Telegram"
             className={inputClass}
           />
-          <div>
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
             <button
               onClick={onContactSubmit}
               disabled={contactStatus === 'sending'}
@@ -109,6 +115,7 @@ export function ProposalCard({
             >
               {contactStatus === 'sending' ? 'Отправляю...' : 'Отправить контакт'}
             </button>
+            {restartControl}
           </div>
           {contactStatus === 'error' && (
             <p className="animate-[fade-in-up_0.2s_ease-out] text-red-600 dark:text-red-400">

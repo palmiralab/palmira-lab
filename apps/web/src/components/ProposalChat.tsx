@@ -5,6 +5,7 @@ import type { Proposal } from '@/lib/ai-provider/provider';
 import { TypingIndicator } from '@/components/TypingIndicator';
 import { ProgressIndicator } from '@/components/ProgressIndicator';
 import { ProposalCard } from '@/components/ProposalCard';
+import { RestartControl } from '@/components/RestartControl';
 import { inputClass, primaryButtonClass } from '@/lib/ui-classes';
 
 // Ровно то, что уходит в POST /api/proposal messages[] — история диалога,
@@ -15,9 +16,14 @@ type ChatMessage = { role: 'user' | 'assistant'; content: string };
 // Урезано относительно §11.2 session-plan.md для MVP: `sending` слит с
 // `waiting_reply` (между кликом и появлением индикатора набора текста нет
 // отдельного видимого состояния), `rate_limited` — это просто текст в
-// `error` (сервер и так возвращает понятное сообщение на 429),
-// `restart_confirm` — фичи "начать заново" ещё нет.
-type ChatState = 'idle' | 'waiting_reply' | 'collecting_contact' | 'completed' | 'error';
+// `error` (сервер и так возвращает понятное сообщение на 429).
+type ChatState =
+  | 'idle'
+  | 'waiting_reply'
+  | 'collecting_contact'
+  | 'completed'
+  | 'error'
+  | 'restart_confirm';
 
 // Роман попросил не показывать 502 сразу — конкретное число не называл,
 // 3 выбрано по аналогии с MAX_JSON_PARSE_ATTEMPTS на сервере (та же
@@ -46,6 +52,33 @@ export function ProposalChat() {
   const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
   const draftInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // 'restart_confirm' перекрывает state, поэтому то, к чему нужно вернуться
+  // при отмене ('idle', 'error', 'collecting_contact' — в зависимости от
+  // момента клика), теряется на обычном useState. Ref, а не ещё один
+  // useState — это не то, что триггерит собственный рендер, просто память
+  // на время подтверждения.
+  const stateBeforeRestartRef = useRef<ChatState>('idle');
+
+  function handleRestartRequest() {
+    stateBeforeRestartRef.current = state;
+    setState('restart_confirm');
+  }
+
+  function handleRestartCancel() {
+    setState(stateBeforeRestartRef.current);
+  }
+
+  function handleRestartConfirm() {
+    setMessages([]);
+    setDraft('');
+    setProposal(null);
+    setError(null);
+    setContactName('');
+    setContactValue('');
+    setContactStatus('idle');
+    setState('idle');
+  }
 
   // Роман печатает "вслепую" (не глядя на экран) — фокус сам должен
   // оказаться в поле ввода каждый раз, как оно снова готово принимать текст
@@ -150,6 +183,21 @@ export function ProposalChat() {
 
   const questionsAsked = messages.filter((m) => m.role === 'assistant').length;
 
+  // Пока идёт запрос — рестарт не показываем: handleSend уже "летит" с
+  // замкнутым nextMessages и по ответу вызовет setMessages/setState заново,
+  // сброс во время waiting_reply перезапишется этим ответом, когда он
+  // придёт. Проще не показывать кнопку в этом окне, чем гоняться за
+  // AbortController-ом ради состояния в пару секунд.
+  const canRestart = state !== 'waiting_reply' && state !== 'restart_confirm' && (messages.length > 0 || proposal !== null);
+  const restartControl = (canRestart || state === 'restart_confirm') && (
+    <RestartControl
+      confirming={state === 'restart_confirm'}
+      onRequest={handleRestartRequest}
+      onConfirm={handleRestartConfirm}
+      onCancel={handleRestartCancel}
+    />
+  );
+
   return (
     <div className="flex flex-col gap-3">
       {messages.length > 0 && (
@@ -182,7 +230,7 @@ export function ProposalChat() {
             disabled={state === 'waiting_reply'}
             className={inputClass}
           />
-          <div>
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
             <button
               onClick={handleSend}
               disabled={state === 'waiting_reply' || !draft.trim()}
@@ -190,6 +238,7 @@ export function ProposalChat() {
             >
               {state === 'waiting_reply' ? 'Отправляю...' : 'Отправить'}
             </button>
+            {restartControl}
           </div>
         </>
       )}
@@ -205,6 +254,7 @@ export function ProposalChat() {
           onContactNameChange={setContactName}
           onContactValueChange={setContactValue}
           onContactSubmit={handleContactSubmit}
+          restartControl={restartControl}
         />
       )}
     </div>
