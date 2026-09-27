@@ -27,6 +27,11 @@ export function Cases() {
               <h4 className="font-mono text-xs uppercase tracking-wide text-slate-500">Результат</h4>
               <p className="mt-0.5 text-emerald-700 dark:text-emerald-400">{item.result}</p>
             </div>
+            {item.link && (
+              <a href={item.link.href} className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
+                {item.link.label}
+              </a>
+            )}
           </article>
         ))}
       </div>

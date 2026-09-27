@@ -34,6 +34,7 @@ export type Case = {
   problem: string;
   solution: string;
   result: string;
+  link?: { href: string; label: string };
 };
 
 export const cases: Case[] = [
@@ -95,5 +96,6 @@ export const cases: Case[] = [
       'Бесплатный старт на GigaChat (365 млн токенов/год, без карты и ' +
       'юрлица) — тот же путь открыт и клиенту, смена LLM не требует ' +
       'переписывать код.',
+    link: { href: '/sandbox', label: 'Посмотреть живое демо автоматической сборки →' },
   },
 ];
