@@ -2,12 +2,14 @@
 
 ---
 
-## 2026-09-28 — Эпик 10 (начало): каркас `apps/api` на NestJS
+## 2026-09-28 — Эпик 10 (начало): каркас `apps/api` на NestJS + health
 
 `apps/api` — NestJS 12 (TypeScript strict, ESM), тесты на vitest, линт на
 oxlint. Целевая версия Node — 24 (`.nvmrc`), порт по умолчанию 3100
 (`.env.example`). Отвечает `Hello World!` (HTTP 200). База данных и
 Docker Compose — следующим шагом.
+Добавлен `health`-модуль: `GET /api/v1/health` → `{"status":"ok"}`,
+глобальный префикс `api/v1` задан в `main.ts`.
 
 ---
 
