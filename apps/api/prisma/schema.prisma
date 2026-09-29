@@ -1,0 +1,51 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+// Адрес базы задаётся в prisma.config.ts (так в Prisma 7), не здесь.
+datasource db {
+  provider = "postgresql"
+}
+
+enum ServiceType {
+  telegram_automation
+  website_landing
+  content_automation
+  ai_consultation
+  manual_review
+
+  @@map("service_type")
+}
+
+// Жизненный цикл лида: new → contacted → qualified → proposal → won,
+// ответвление lost; manual_review — для непонятных или нестандартных запросов.
+enum LeadStatus {
+  new
+  contacted
+  qualified
+  proposal
+  won
+  lost
+  manual_review
+
+  @@map("lead_status")
+}
+
+model Lead {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contact      String
+  name         String?
+  serviceType  ServiceType @map("service_type")
+  budgetHint   String?     @map("budget_hint")
+  deadlineHint String?     @map("deadline_hint")
+  status       LeadStatus  @default(new)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  // Список и фильтрация лидов (session-plan §10.2).
+  @@index([status, createdAt(sort: Desc)])
+  @@map("lead")
+}
