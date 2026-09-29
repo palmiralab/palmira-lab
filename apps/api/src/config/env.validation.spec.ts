@@ -21,6 +21,10 @@ describe('validate (env)', () => {
     expect(() => validate({})).toThrow(/DATABASE_URL/);
   });
 
+  it('пишет понятно, что DATABASE_URL не задана, без английского жаргона', () => {
+    expect(() => validate({})).toThrow(/DATABASE_URL: переменная не задана/);
+  });
+
   it('падает на некорректном PORT', () => {
     expect(() => validate({ ...validEnv, PORT: 'abc' })).toThrow(/PORT/);
     expect(() => validate({ ...validEnv, PORT: '70000' })).toThrow(/PORT/);

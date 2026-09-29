@@ -13,7 +13,12 @@ const envSchema = z.object({
   // Значения по умолчанию нет намеренно: угаданный адрес базы опаснее,
   // чем упавший при старте сервер.
   DATABASE_URL: z
-    .string()
+    .string({
+      error: (issue) =>
+        issue.input === undefined
+          ? 'переменная не задана'
+          : 'должна быть строкой',
+    })
     .regex(
       /^postgres(ql)?:\/\/\S+$/,
       'должен начинаться с postgres:// или postgresql://',
