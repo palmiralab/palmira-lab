@@ -9,5 +9,8 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.spec.ts'],
+    // Декораторы class-transformer/class-validator читают метаданные через
+    // полифил Reflect; в работающем Nest его подключает сам фреймворк.
+    setupFiles: ['reflect-metadata'],
   },
 });

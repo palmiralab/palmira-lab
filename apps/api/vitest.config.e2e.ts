@@ -7,5 +7,8 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.e2e-spec.ts'],
+    // Декораторы class-transformer/class-validator читают метаданные через
+    // полифил Reflect; в работающем Nest его подключает сам фреймворк.
+    setupFiles: ['reflect-metadata'],
   },
 });
