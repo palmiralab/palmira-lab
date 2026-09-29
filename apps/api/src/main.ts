@@ -1,9 +1,12 @@
 import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module.js';
+import type { Env } from './config/env.validation.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const config = app.get<ConfigService<Env, true>>(ConfigService);
   app.setGlobalPrefix('api/v1');
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(config.get('PORT', { infer: true }));
 }
 await bootstrap();
