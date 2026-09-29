@@ -45,7 +45,31 @@ model Lead {
   createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  conversations Conversation[]
+
   // Список и фильтрация лидов (session-plan §10.2).
   @@index([status, createdAt(sort: Desc)])
   @@map("lead")
+}
+
+// Чат-сессия посетителя. Разговор начинается раньше, чем появляется лид
+// (контакт человек оставляет в конце), поэтому leadId необязателен.
+model Conversation {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId      String?      @map("lead_id") @db.Uuid
+  // Restrict: лида с разговорами удалить нельзя, история остаётся для аналитики.
+  lead        Lead?        @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  // Идентификатор сессии посетителя (продолжение чата), отдельный от id.
+  sessionId   String       @default(dbgenerated("gen_random_uuid()")) @map("session_id") @db.Uuid
+  // Шаг сценария; допустимые значения пока в коде, в enum переведём, когда
+  // сценарий устоится.
+  currentStep String       @map("current_step")
+  // Тип услуги; пусто, пока сценарий не определил.
+  category    ServiceType?
+  completedAt DateTime?    @map("completed_at") @db.Timestamptz(3)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  // Продолжение пользовательской сессии (session-plan §10.2).
+  @@index([sessionId])
+  @@map("conversation")
 }

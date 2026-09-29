@@ -11,6 +11,8 @@ Prisma 7: источник правды `apps/api/prisma/schema.prisma`, изм�
 
 ```mermaid
 erDiagram
+    lead |o--o{ conversation : "lead_id, ON DELETE RESTRICT"
+
     lead {
         uuid id PK "gen_random_uuid()"
         text contact "NOT NULL"
@@ -22,9 +24,21 @@ erDiagram
         timestamptz created_at "NOT NULL, default now (3)"
         timestamptz updated_at "NOT NULL, задаёт Prisma (3)"
     }
+    conversation {
+        uuid id PK "gen_random_uuid()"
+        uuid lead_id FK "nullable"
+        uuid session_id "NOT NULL, gen_random_uuid()"
+        text current_step "NOT NULL"
+        service_type category "nullable"
+        timestamptz completed_at "nullable (3)"
+        timestamptz created_at "NOT NULL, default now (3)"
+    }
 ```
 
 ### `lead`: потенциальный клиент
+
+Лид: человек, который проявил интерес и оставил способ связаться. Появляется
+в конце разговора, когда посетитель оставил контакт.
 
 | Колонка | Тип | Null | По умолчанию | Примечание |
 |---|---|---|---|---|
@@ -41,6 +55,30 @@ erDiagram
 Индексы: `lead_pkey` (PK по `id`); `lead_status_created_at_idx` по
 `(status, created_at DESC)`: список и фильтрация лидов.
 
+### `conversation`: чат-сессия посетителя
+
+Разговор начинается раньше, чем появляется лид, поэтому `lead_id` пуст, пока
+посетитель не оставил контакт.
+
+| Колонка | Тип | Null | По умолчанию | Примечание |
+|---|---|---|---|---|
+| `id` | `uuid` | нет | `gen_random_uuid()` | PK; клиент присылает его как `conversationId` |
+| `lead_id` | `uuid` | да | | FK → `lead(id)`, `ON DELETE RESTRICT ON UPDATE CASCADE` |
+| `session_id` | `uuid` | нет | `gen_random_uuid()` | идентификатор сессии посетителя (продолжение чата), отдельный от `id` |
+| `current_step` | `text` | нет | нет | шаг сценария; допустимые значения пока в коде, в enum переведём, когда сценарий устоится |
+| `category` | `service_type` | да | | тип услуги; пусто, пока сценарий не определил |
+| `completed_at` | `timestamptz(3)` | да | | пусто, пока разговор не завершён |
+| `created_at` | `timestamptz(3)` | нет | `CURRENT_TIMESTAMP` | |
+
+Индексы: `conversation_pkey` (PK по `id`); `conversation_session_id_idx` по
+`session_id`: продолжение пользовательской сессии. Индекса на `lead_id`
+нет намеренно (план §10.2: без индексов «на всякий случай», вернуться после
+`EXPLAIN ANALYZE` на реальных данных).
+
+`ON DELETE RESTRICT`: лида с разговорами удалить нельзя, история остаётся для
+аналитики. Если понадобится «удалить данные по запросу клиента», сначала
+придётся разобраться с его разговорами (открытый вопрос).
+
 ### Enum-типы
 
 | Тип | Значения |
@@ -55,18 +93,17 @@ erDiagram
 ## План (ещё не в базе)
 
 Связи между сущностями из плана (`session-plan.md` §10.1, поля и типы
-уточним при создании каждой таблицы). Показаны только ключи.
+уточним при создании каждой таблицы). Показаны только ключи; `conversation`
+уже реализована (см. выше) и присутствует как точка привязки.
 
 ```mermaid
 erDiagram
-    lead |o--o{ conversation : "lead_id (nullable)"
     conversation ||--o{ message : "conversation_id"
     lead |o--o{ proposal : "lead_id (nullable)"
     conversation ||--o{ proposal : "conversation_id"
 
     conversation {
         uuid id PK
-        uuid lead_id FK "nullable"
     }
     message {
         uuid id PK
