@@ -43,13 +43,18 @@ export default function SandboxFormPage() {
   }
 
   return (
-    <main className="mx-auto max-w-xl px-4 py-16">
+    <div>
       <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-        Песочница: страница по шаблону
+        Песочница: страничка по шаблону
       </h1>
       <p className="mt-2 text-slate-600 dark:text-slate-400">
-        Текст + шаблон → живая ссылка на 5 минут. Демонстрация того, как работает
-        автоматическая сборка страниц.
+        Введите заголовок и текст, выберите шаблон, и мы соберём из них отдельную
+        страничку с готовой ссылкой, которой можно поделиться. Ссылка живёт 5 минут.
+      </p>
+      <p className="mt-2 text-slate-600 dark:text-slate-400">
+        Это не сайт целиком, а демонстрация автоматической сборки: так же страницы
+        собираются и для ваших задач. В работе дизайн и тип страницы могут быть любыми, по
+        согласованию.
       </p>
 
       <div className="mt-6 space-y-4">
@@ -100,6 +105,6 @@ export default function SandboxFormPage() {
           — доступна до {new Date(result.expiresAt).toLocaleTimeString('ru-RU')}.
         </p>
       )}
-    </main>
+    </div>
   );
 }
