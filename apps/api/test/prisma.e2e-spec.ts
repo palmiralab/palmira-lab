@@ -34,6 +34,9 @@ describe('PrismaService (живая база)', () => {
       .compile();
     const app = moduleRef.createNestApplication();
 
-    await expect(app.init()).rejects.toThrow();
+    // Сообщение должно называть причину и не раскрывать строку подключения.
+    await expect(app.init()).rejects.toThrow(
+      /Не удалось подключиться к базе данных.*ECONNREFUSED/s,
+    );
   });
 });

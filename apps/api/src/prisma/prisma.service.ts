@@ -24,8 +24,21 @@ export class PrismaService
   // $connect() мало: с драйвер-адаптером он успешен без реального соединения
   // (пул ленивый), поэтому делаем пробный запрос.
   async onModuleInit() {
-    await this.$connect();
-    await this.$queryRaw`SELECT 1`;
+    try {
+      await this.$connect();
+      await this.$queryRaw`SELECT 1`;
+    } catch (error) {
+      // Текст исходной ошибки Prisma бесполезен («Invalid ... invocation»), а
+      // причина (ECONNREFUSED и т.п.) лежит в поле code. Оригинал не
+      // прикладываем (cause): он выводит в лог куски кода клиента.
+      const reason =
+        error instanceof Error && 'code' in error
+          ? String(error.code)
+          : String(error);
+      throw new Error(
+        `Не удалось подключиться к базе данных (${reason}). Проверьте, что база запущена и DATABASE_URL верен.`,
+      );
+    }
   }
 
   async onModuleDestroy() {
