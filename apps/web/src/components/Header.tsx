@@ -1,21 +1,35 @@
+import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
-export function Header() {
+const wordmark = (
+  <>
+    Palmira<span className="text-emerald-600 dark:text-emerald-400">Lab</span>
+  </>
+);
+const wordmarkClass = 'text-3xl font-bold text-slate-900 dark:text-slate-100 sm:text-4xl';
+
+// На главной логотип — единственный h1; на внутренних страницах h1 — заголовок
+// самой страницы, поэтому логотип там ссылка, а не заголовок.
+export function Header({ isHome = false }: { isHome?: boolean }) {
   return (
     <div className="flex flex-col gap-4 -mb-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 sm:text-4xl">
-          Palmira<span className="text-emerald-600 dark:text-emerald-400">Lab</span>
-        </h1>
+        {isHome ? (
+          <h1 className={wordmarkClass}>{wordmark}</h1>
+        ) : (
+          <Link href="/" className={wordmarkClass}>
+            {wordmark}
+          </Link>
+        )}
         <ThemeToggle />
       </div>
       <nav className="flex gap-4 text-sm text-slate-600 dark:text-slate-400">
-        <a href="#services" className="hover:underline">
+        <Link href="/#services" className="hover:underline">
           Услуги
-        </a>
-        <a href="#cases" className="hover:underline">
+        </Link>
+        <Link href="/#cases" className="hover:underline">
           Кейсы
-        </a>
+        </Link>
       </nav>
     </div>
   );

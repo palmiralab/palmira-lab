@@ -7,7 +7,7 @@ import { Footer } from '@/components/Footer';
 export default function Home() {
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-16 px-4 py-10 sm:py-16">
-      <Header />
+      <Header isHome />
       <ProposalChat />
       <Services />
       <Cases />
