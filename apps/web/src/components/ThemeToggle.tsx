@@ -1,20 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
+
+// Тема живёт вне React: класс `dark` на <html> выставляет инлайн-скрипт в
+// <head>. Подписываемся на изменение этого класса и читаем его же.
+function subscribe(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  return () => observer.disconnect();
+}
+
+function getSnapshot() {
+  return document.documentElement.classList.contains('dark');
+}
+
+// На сервере сохранённую тему не знаем: null, рендерим пусто, чтобы не спорить
+// с классом, который уже выставил скрипт.
+function getServerSnapshot() {
+  return null;
+}
 
 export function ThemeToggle() {
-  // null до монтирования — не знаем сохранённую тему на сервере, рендерим
-  // пусто первый тик, чтобы не спорить с классом, который уже выставил
-  // инлайн-скрипт в <head>.
-  const [isDark, setIsDark] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    setIsDark(document.documentElement.classList.contains('dark'));
-  }, []);
+  const isDark = useSyncExternalStore<boolean | null>(subscribe, getSnapshot, getServerSnapshot);
 
   function toggle() {
     const next = !isDark;
-    setIsDark(next);
     document.documentElement.classList.toggle('dark', next);
     localStorage.setItem('theme', next ? 'dark' : 'light');
   }
