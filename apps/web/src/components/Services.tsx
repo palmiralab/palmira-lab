@@ -21,14 +21,20 @@ export function Services() {
             <p className="mt-3 font-mono text-sm text-emerald-600 dark:text-emerald-400">
               {group.price}
             </p>
-            <ul className="mt-2 flex flex-col gap-1 text-sm">
+            <ul className="mt-3 divide-y divide-slate-200 border-t border-slate-200 text-sm dark:divide-slate-800 dark:border-slate-800">
               {group.items.map((item) => (
                 <li key={item.slug}>
                   <Link
                     href={`/services/${item.slug}`}
-                    className="text-slate-700 hover:underline dark:text-slate-300"
+                    className="group flex items-center justify-between gap-2 py-2 text-slate-700 hover:text-emerald-700 dark:text-slate-300 dark:hover:text-emerald-400"
                   >
-                    {item.title}
+                    <span>{item.title}</span>
+                    <span
+                      aria-hidden="true"
+                      className="text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-emerald-600 dark:group-hover:text-emerald-400"
+                    >
+                      →
+                    </span>
                   </Link>
                 </li>
               ))}
