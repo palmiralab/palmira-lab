@@ -4,6 +4,7 @@ import { Cases } from '@/components/Cases';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ScrollToHash } from '@/components/ScrollToHash';
+import { ScrollToTop } from '@/components/ScrollToTop';
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
       <Services />
       <Cases />
       <Footer />
+      <ScrollToTop />
     </main>
   );
 }
