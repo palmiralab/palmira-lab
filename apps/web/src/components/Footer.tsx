@@ -33,7 +33,7 @@ export function Footer() {
           </a>
         </div>
       </div>
-      <p>
+      <p className="relative">
         Сайт собран с помощью{' '}
           <Tooltip trigger="agentic-разработки">
           Вид разработки, когда ИИ-агент сам читает код проекта, вносит правки и запускает проверки, а
