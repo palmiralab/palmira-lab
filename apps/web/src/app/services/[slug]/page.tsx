@@ -51,6 +51,20 @@ export default async function ServicePage(props: PageProps<'/services/[slug]'>) 
 
       {detail && (
         <>
+          {detail.explainer && (
+            <Section title={detail.explainer.title}>
+              <p className="text-slate-600 dark:text-slate-400">{detail.explainer.intro}</p>
+              <h3 className="font-medium text-slate-900 dark:text-slate-100">
+                {detail.explainer.tasksTitle}
+              </h3>
+              <ul className={listClass}>
+                {detail.explainer.tasks.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </Section>
+          )}
+
           <Section title="Кому подходит">
             <ul className={listClass}>
               {detail.forWhom.map((line) => (
