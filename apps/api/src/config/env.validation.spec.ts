@@ -42,6 +42,43 @@ describe('validate (env)', () => {
     ).toThrow(/DATABASE_URL/);
   });
 
+  it('Telegram-переменные необязательны: без них уведомления выключены', () => {
+    const config = validate(validEnv);
+
+    expect(config.TELEGRAM_BOT_TOKEN).toBeUndefined();
+    expect(config.TELEGRAM_CHAT_ID).toBeUndefined();
+  });
+
+  it('принимает токен и chat_id вместе', () => {
+    const config = validate({
+      ...validEnv,
+      TELEGRAM_BOT_TOKEN: '123456:abc',
+      TELEGRAM_CHAT_ID: '987654321',
+    });
+
+    expect(config.TELEGRAM_BOT_TOKEN).toBe('123456:abc');
+    expect(config.TELEGRAM_CHAT_ID).toBe('987654321');
+  });
+
+  it('падает, если задан токен без chat_id и наоборот', () => {
+    expect(() =>
+      validate({ ...validEnv, TELEGRAM_BOT_TOKEN: '123456:abc' }),
+    ).toThrow(/TELEGRAM_CHAT_ID/);
+    expect(() =>
+      validate({ ...validEnv, TELEGRAM_CHAT_ID: '987654321' }),
+    ).toThrow(/TELEGRAM_BOT_TOKEN/);
+  });
+
+  it('не выводит токен бота в текст ошибки', () => {
+    expect(() =>
+      validate({ ...validEnv, TELEGRAM_BOT_TOKEN: '123456:topsecrettoken' }),
+    ).toThrow(
+      expect.objectContaining({
+        message: expect.not.stringContaining('topsecrettoken'),
+      }),
+    );
+  });
+
   it('не выводит значения переменных в текст ошибки', () => {
     const secretUrl = 'mysql://palmira:topsecret@localhost/db';
 

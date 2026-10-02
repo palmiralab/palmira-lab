@@ -1,8 +1,13 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  TelegramNotifier,
+  type NewLeadNotice,
+} from '../notifications/telegram-notifier.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateContactDto } from './dto/create-contact.dto.js';
 import { CreateContactResponse } from './dto/create-contact.response.js';
@@ -11,7 +16,12 @@ import { FIRST_QUESTION, INTAKE_STEP } from './intake.constants.js';
 
 @Injectable()
 export class IntakeService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(IntakeService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifier: TelegramNotifier,
+  ) {}
 
   // Открывает разговор: посетитель анонимен, лида ещё нет. Идентификаторы
   // выдаёт сервер (id и sessionId генерирует база).
@@ -31,7 +41,7 @@ export class IntakeService {
   // привязываем его. Всё в одной транзакции: исключение внутри откатывает и
   // лида, чтобы не оставалось лидов-сирот с неудавшейся привязкой.
   async createContact(dto: CreateContactDto): Promise<CreateContactResponse> {
-    return this.prisma.$transaction(async (tx) => {
+    const { leadId } = await this.prisma.$transaction(async (tx) => {
       const lead = await tx.lead.create({
         data: {
           name: dto.name,
@@ -68,5 +78,30 @@ export class IntakeService {
 
       return { leadId: lead.id };
     });
+
+    // Уведомляем только после коммита: откатанный лид не должен попасть в
+    // чат. Сбой уведомления не ломает приём заявки (лид уже в базе).
+    await this.notifyNewLead({
+      leadId,
+      name: dto.name,
+      contact: dto.contact,
+      serviceType: dto.serviceType,
+      auditAnswers: dto.auditAnswers,
+    });
+
+    return { leadId };
+  }
+
+  private async notifyNewLead(notice: NewLeadNotice): Promise<void> {
+    try {
+      await this.notifier.notifyNewLead(notice);
+    } catch (error) {
+      // В лог только id лида и текст ошибки, без контакта посетителя.
+      this.logger.error(
+        `Не удалось отправить уведомление о лиде ${notice.leadId}: ${
+          error instanceof Error ? error.message : 'неизвестная ошибка'
+        }`,
+      );
+    }
   }
 }

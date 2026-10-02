@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
+import { TelegramNotifier } from '../src/notifications/telegram-notifier.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 
 // Сквозная проверка на живой базе: HTTP-запрос → транзакция → строки в lead и
@@ -17,6 +18,11 @@ describe('POST /api/v1/intake/contact (e2e)', () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
   const conversationIds: string[] = [];
+
+  // Подмена всегда, не только в тестах про уведомления: если в локальном .env
+  // заданы настоящие TELEGRAM_*, каждый прогон тестов иначе слал бы реальные
+  // сообщения в чат.
+  const notifier = { notifyNewLead: vi.fn() };
 
   const validBody = {
     name: 'Тест',
@@ -41,11 +47,19 @@ describe('POST /api/v1/intake/contact (e2e)', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(TelegramNotifier)
+      .useValue(notifier)
+      .compile();
     app = moduleRef.createNestApplication();
     configureApp(app);
     await app.init();
     prisma = app.get(PrismaService);
+  });
+
+  beforeEach(() => {
+    notifier.notifyNewLead.mockReset();
+    notifier.notifyNewLead.mockResolvedValue(undefined);
   });
 
   afterEach(async () => {
@@ -152,5 +166,49 @@ describe('POST /api/v1/intake/contact (e2e)', () => {
     }).expect(409);
 
     expect(await countTestLeads()).toBe(1);
+  });
+
+  describe('уведомление о новом лиде', () => {
+    it('отправляется один раз после успешного создания, с данными лида', async () => {
+      const res = await post({
+        ...validBody,
+        serviceType: 'ai_consultation',
+        auditAnswers: { business: 'Клиника' },
+      }).expect(201);
+
+      expect(notifier.notifyNewLead).toHaveBeenCalledTimes(1);
+      expect(notifier.notifyNewLead).toHaveBeenCalledWith({
+        leadId: res.body.leadId,
+        name: 'Тест',
+        contact: validBody.contact,
+        serviceType: 'ai_consultation',
+        auditAnswers: { business: 'Клиника' },
+      });
+    });
+
+    it('не отправляется, если запрос отклонён (400, 404, 409)', async () => {
+      await post({ ...validBody, name: '' }).expect(400);
+      await post({ ...validBody, conversationId: UNKNOWN_UUID }).expect(404);
+
+      const conversation = await newConversation();
+      await post({ ...validBody, conversationId: conversation.id }).expect(201);
+      notifier.notifyNewLead.mockClear();
+      await post({
+        ...validBody,
+        contact: `${MARK}-second@example.com`,
+        conversationId: conversation.id,
+      }).expect(409);
+
+      expect(notifier.notifyNewLead).not.toHaveBeenCalled();
+    });
+
+    it('сбой уведомления не ломает запрос: лид сохранён, ответ 201', async () => {
+      notifier.notifyNewLead.mockRejectedValue(new Error('Telegram недоступен'));
+
+      const res = await post(validBody).expect(201);
+
+      expect(await countTestLeads()).toBe(1);
+      expect(res.body.leadId).toEqual(expect.any(String));
+    });
   });
 });

@@ -23,6 +23,37 @@ const envSchema = z.object({
       /^postgres(ql)?:\/\/\S+$/,
       'должен начинаться с postgres:// или postgresql://',
     ),
+
+  // Уведомления о новых лидах в Telegram. Необязательны: без них (например,
+  // в тестах и локальной разработке) уведомления просто выключены. Пустая
+  // строка в .env считается «не задано».
+  TELEGRAM_BOT_TOKEN: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || undefined),
+  TELEGRAM_CHAT_ID: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || undefined),
+}).superRefine((env, ctx) => {
+  // Одно без другого означает ошибку в настройке: тихо выключенные
+  // уведомления заметили бы только когда лид уже потерялся.
+  if (env.TELEGRAM_BOT_TOKEN && !env.TELEGRAM_CHAT_ID) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['TELEGRAM_CHAT_ID'],
+      message: 'задан токен бота, нужен и chat_id',
+    });
+  }
+  if (env.TELEGRAM_CHAT_ID && !env.TELEGRAM_BOT_TOKEN) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['TELEGRAM_BOT_TOKEN'],
+      message: 'задан chat_id, нужен и токен бота',
+    });
+  }
 });
 
 export type Env = z.infer<typeof envSchema>;

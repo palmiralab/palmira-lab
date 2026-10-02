@@ -1,3 +1,4 @@
+import type { TelegramNotifier } from '../notifications/telegram-notifier.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import { FIRST_QUESTION, INTAKE_STEP } from './intake.constants.js';
 import { IntakeService } from './intake.service.js';
@@ -11,7 +12,9 @@ describe('IntakeService.start', () => {
   function setup() {
     const create = vi.fn().mockResolvedValue(created);
     const prisma = { conversation: { create } } as unknown as PrismaService;
-    return { create, service: new IntakeService(prisma) };
+    // start() уведомлений не шлёт, поэтому подмена пустая.
+    const notifier = {} as unknown as TelegramNotifier;
+    return { create, service: new IntakeService(prisma, notifier) };
   }
 
   it('создаёт разговор на начальном шаге сценария', async () => {
