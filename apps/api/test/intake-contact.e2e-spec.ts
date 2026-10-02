@@ -1,0 +1,156 @@
+import { INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import request from 'supertest';
+import { App } from 'supertest/types.js';
+import { AppModule } from '../src/app.module.js';
+import { configureApp } from '../src/app.setup.js';
+import { PrismaService } from '../src/prisma/prisma.service.js';
+
+// Сквозная проверка на живой базе: HTTP-запрос → транзакция → строки в lead и
+// conversation. Все тестовые лиды помечены префиксом в contact, по нему и
+// чистим.
+const MARK = 'test-contact-e2e';
+const URL = '/api/v1/intake/contact';
+const UNKNOWN_UUID = '00000000-0000-4000-8000-000000000000';
+
+describe('POST /api/v1/intake/contact (e2e)', () => {
+  let app: INestApplication<App>;
+  let prisma: PrismaService;
+  const conversationIds: string[] = [];
+
+  const validBody = {
+    name: 'Тест',
+    contact: `${MARK}@example.com`,
+    serviceType: 'website_landing',
+  };
+
+  const post = (body: object) =>
+    request(app.getHttpServer()).post(URL).send(body);
+
+  const newConversation = async () => {
+    const conversation = await prisma.conversation.create({
+      data: { currentStep: 'start' },
+    });
+    conversationIds.push(conversation.id);
+    return conversation;
+  };
+
+  const countTestLeads = () =>
+    prisma.lead.count({ where: { contact: { startsWith: MARK } } });
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleRef.createNestApplication();
+    configureApp(app);
+    await app.init();
+    prisma = app.get(PrismaService);
+  });
+
+  afterEach(async () => {
+    // try/finally: сбой очистки разговоров не должен оставить тестовых лидов.
+    try {
+      await prisma.conversation.deleteMany({
+        where: { id: { in: conversationIds } },
+      });
+    } finally {
+      await prisma.lead.deleteMany({
+        where: { contact: { startsWith: MARK } },
+      });
+      conversationIds.length = 0;
+    }
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('создаёт лида без разговора и возвращает его id', async () => {
+    const res = await post(validBody).expect(201);
+
+    expect(res.body.leadId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    );
+    const lead = await prisma.lead.findUniqueOrThrow({
+      where: { id: res.body.leadId },
+    });
+    expect(lead).toMatchObject({
+      name: 'Тест',
+      contact: validBody.contact,
+      serviceType: 'website_landing',
+      status: 'new',
+      auditAnswers: null,
+    });
+  });
+
+  it('сохраняет ответы анкеты аудита', async () => {
+    const auditAnswers = { business: 'Клиника', hoursPerWeek: 10 };
+    const res = await post({
+      ...validBody,
+      serviceType: 'ai_consultation',
+      auditAnswers,
+    }).expect(201);
+
+    const lead = await prisma.lead.findUniqueOrThrow({
+      where: { id: res.body.leadId },
+    });
+    expect(lead.auditAnswers).toEqual(auditAnswers);
+  });
+
+  it('привязывает разговор к лиду в той же транзакции', async () => {
+    const conversation = await newConversation();
+    const res = await post({
+      ...validBody,
+      conversationId: conversation.id,
+    }).expect(201);
+
+    const row = await prisma.conversation.findUniqueOrThrow({
+      where: { id: conversation.id },
+    });
+    expect(row.leadId).toBe(res.body.leadId);
+    expect(row.category).toBe('website_landing');
+    expect(row.completedAt).toBeInstanceOf(Date);
+  });
+
+  it.each([
+    ['пустое имя', { ...validBody, name: '' }],
+    ['нет контакта', { name: 'Тест', serviceType: 'website_landing' }],
+    ['неизвестный serviceType', { ...validBody, serviceType: 'nope' }],
+    ['слишком длинный контакт', { ...validBody, contact: MARK + 'x'.repeat(200) }],
+    ['conversationId не uuid', { ...validBody, conversationId: 'abc' }],
+    ['лишнее поле', { ...validBody, status: 'won' }],
+    ['auditAnswers не объект', { ...validBody, auditAnswers: 'текст' }],
+  ])('отвечает 400: %s, лид не создаётся', async (_name, body) => {
+    await post(body).expect(400);
+    expect(await countTestLeads()).toBe(0);
+  });
+
+  it('отвечает 404 на несуществующий разговор и откатывает создание лида', async () => {
+    const res = await post({
+      ...validBody,
+      conversationId: UNKNOWN_UUID,
+    }).expect(404);
+    // Без проверки текста тест прошёл бы и на несуществующем маршруте (там
+    // тоже 404): так и поймали, когда ещё не было реализации.
+    expect(res.body.message).toBe('Разговор не найден');
+
+    // Лид создаётся в транзакции раньше проверки разговора: если откат не
+    // работает, он останется в базе.
+    expect(await countTestLeads()).toBe(0);
+  });
+
+  it('отвечает 409, если разговор уже привязан к другому лиду, новый лид не создаётся', async () => {
+    const conversation = await newConversation();
+    await post({ ...validBody, conversationId: conversation.id }).expect(201);
+    expect(await countTestLeads()).toBe(1);
+
+    await post({
+      ...validBody,
+      contact: `${MARK}-second@example.com`,
+      conversationId: conversation.id,
+    }).expect(409);
+
+    expect(await countTestLeads()).toBe(1);
+  });
+});
