@@ -41,6 +41,10 @@ model Lead {
   serviceType  ServiceType @map("service_type")
   budgetHint   String?     @map("budget_hint")
   deadlineHint String?     @map("deadline_hint")
+  // Ответы анкеты бесплатного аудита целиком; пусто, пока человек её не
+  // проходил. Фиксированный набор вопросов, читаются вместе, поиска по
+  // отдельным ответам нет, поэтому JSON, а не отдельная таблица.
+  auditAnswers Json?       @map("audit_answers")
   status       LeadStatus  @default(new)
   createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
