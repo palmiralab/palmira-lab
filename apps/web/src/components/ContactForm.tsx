@@ -36,7 +36,7 @@ export function ContactForm({
     <div className="flex flex-col gap-2 border-t border-slate-200 pt-4 dark:border-slate-800">
       <h3 className="font-medium text-slate-900 dark:text-slate-100">Оставить контакт</h3>
       <p className="text-sm text-slate-500">
-        <small>Чтобы связаться и уточнить предложение — ничего лишнего не собираем.</small>
+        <small>Чтобы связаться с вами — ничего лишнего не собираем.</small>
       </p>
       <input
         value={contactName}

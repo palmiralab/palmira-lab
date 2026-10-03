@@ -266,7 +266,7 @@ export function ProposalChat() {
       {proposal && (
         // manual пока показываем как КП, отдельную ветку добавим следующим блоком.
         outcomeFor(proposal.serviceType) === 'audit' ? (
-          <AuditRequestCard {...contactCardProps} proposal={proposal} />
+          <AuditRequestCard {...contactCardProps} />
         ) : (
           <ProposalCard {...contactCardProps} proposal={proposal} />
         )
