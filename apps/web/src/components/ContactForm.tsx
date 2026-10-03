@@ -25,7 +25,7 @@ export function ContactForm({
 }: ContactFormProps) {
   if (contactStatus === 'sent') {
     return (
-      <div className="flex flex-col items-start gap-2 border-t border-slate-200 pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col items-start gap-2 border-t border-slate-200 pt-4 dark:border-slate-800">
         <p className="text-emerald-700 dark:text-emerald-400">{successText}</p>
         {restartControl}
       </div>
