@@ -3,6 +3,7 @@ import { sendContact } from '@/lib/intake-client';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 const MAX_FIELD_LENGTH = 200;
+const MAX_DETAILS_LENGTH = 2000;
 
 export async function POST(request: Request) {
   const { rateLimited } = checkRateLimit(request);
@@ -14,6 +15,8 @@ export async function POST(request: Request) {
   const name = typeof body?.name === 'string' ? body.name.trim() : '';
   const contact = typeof body?.contact === 'string' ? body.contact.trim() : '';
   const serviceType = VALID_SERVICE_TYPES.find((type) => type === body?.serviceType);
+  const details =
+    typeof body?.auditAnswers?.details === 'string' ? body.auditAnswers.details.trim() : '';
 
   if (!name || !contact) {
     return Response.json({ error: 'Укажите имя и контакт для связи' }, { status: 400 });
@@ -23,11 +26,20 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Слишком длинное значение полей' }, { status: 400 });
   }
 
+  if (details.length > MAX_DETAILS_LENGTH) {
+    return Response.json({ error: 'Слишком длинное описание' }, { status: 400 });
+  }
+
   if (!serviceType) {
     return Response.json({ error: 'Не удалось определить тип заявки' }, { status: 400 });
   }
 
-  const result = await sendContact({ name, contact, serviceType });
+  const result = await sendContact({
+    name,
+    contact,
+    serviceType,
+    auditAnswers: details ? { details } : undefined,
+  });
   if (!result.ok) {
     return Response.json({ error: result.error }, { status: result.status });
   }

@@ -4,6 +4,8 @@ export type ContactPayload = {
   name: string;
   contact: string;
   serviceType: ServiceType;
+  // Свободное описание от посетителя (вариант «опишите подробнее» у manual_review).
+  auditAnswers?: { details: string };
 };
 
 // Результат без исключений: вызывающий (route handler) решает, какой HTTP-код
