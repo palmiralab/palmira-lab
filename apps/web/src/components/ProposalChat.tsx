@@ -106,6 +106,9 @@ export function ProposalChat() {
         ? [...messages.slice(0, -1), { role: 'user', content }]
         : [...messages, { role: 'user', content }];
     setMessages(nextMessages);
+    // Реплика уже в ленте, поле очищаем сразу; при провале текст вернётся
+    // (setDraft(content) в ветках ошибки ниже), чтобы набранное не терялось.
+    setDraft('');
     setError(null);
     setState('waiting_reply');
 
@@ -136,7 +139,6 @@ export function ProposalChat() {
           return;
         }
 
-        setDraft('');
         if (data.type === 'question') {
           setMessages([...nextMessages, { role: 'assistant', content: data.text }]);
           setState('idle');
