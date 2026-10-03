@@ -1,9 +1,9 @@
+import { MAX_DETAILS_LENGTH } from '@/lib/contact-limits';
 import { VALID_SERVICE_TYPES } from '@/lib/ai-provider/validate-model-response';
 import { sendContact } from '@/lib/intake-client';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 const MAX_FIELD_LENGTH = 200;
-const MAX_DETAILS_LENGTH = 2000;
 
 export async function POST(request: Request) {
   const { rateLimited } = checkRateLimit(request, 'contact');
