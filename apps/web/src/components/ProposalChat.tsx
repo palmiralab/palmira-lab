@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import type { Proposal } from '@/lib/ai-provider/provider';
 import { TypingIndicator } from '@/components/TypingIndicator';
 import { ProgressIndicator } from '@/components/ProgressIndicator';
+import { AuditRequestCard } from '@/components/AuditRequestCard';
 import { ProposalCard } from '@/components/ProposalCard';
 import { RestartControl } from '@/components/RestartControl';
+import { outcomeFor } from '@/lib/proposal-outcome';
 import { inputClass, primaryButtonClass } from '@/lib/ui-classes';
 
 // Ровно то, что уходит в POST /api/proposal messages[] — история диалога,
@@ -204,6 +206,16 @@ export function ProposalChat() {
     />
   );
 
+  const contactCardProps = {
+    contactName,
+    contactValue,
+    contactStatus,
+    onContactNameChange: setContactName,
+    onContactValueChange: setContactValue,
+    onContactSubmit: handleContactSubmit,
+    restartControl,
+  };
+
   return (
     <div className="flex flex-col gap-3">
       {messages.length > 0 && (
@@ -252,16 +264,12 @@ export function ProposalChat() {
         <p className="animate-[fade-in-up_0.2s_ease-out] text-red-600 dark:text-red-400">{error}</p>
       )}
       {proposal && (
-        <ProposalCard
-          proposal={proposal}
-          contactName={contactName}
-          contactValue={contactValue}
-          contactStatus={contactStatus}
-          onContactNameChange={setContactName}
-          onContactValueChange={setContactValue}
-          onContactSubmit={handleContactSubmit}
-          restartControl={restartControl}
-        />
+        // manual пока показываем как КП, отдельную ветку добавим следующим блоком.
+        outcomeFor(proposal.serviceType) === 'audit' ? (
+          <AuditRequestCard {...contactCardProps} proposal={proposal} />
+        ) : (
+          <ProposalCard {...contactCardProps} proposal={proposal} />
+        )
       )}
     </div>
   );
