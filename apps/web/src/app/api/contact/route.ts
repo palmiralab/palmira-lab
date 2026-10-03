@@ -1,3 +1,5 @@
+import { VALID_SERVICE_TYPES } from '@/lib/ai-provider/validate-model-response';
+import { sendContact } from '@/lib/intake-client';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 const MAX_FIELD_LENGTH = 200;
@@ -11,7 +13,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const name = typeof body?.name === 'string' ? body.name.trim() : '';
   const contact = typeof body?.contact === 'string' ? body.contact.trim() : '';
-  const proposalId = typeof body?.proposalId === 'string' ? body.proposalId : undefined;
+  const serviceType = VALID_SERVICE_TYPES.find((type) => type === body?.serviceType);
 
   if (!name || !contact) {
     return Response.json({ error: 'Укажите имя и контакт для связи' }, { status: 400 });
@@ -21,26 +23,16 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Слишком длинное значение полей' }, { status: 400 });
   }
 
-  // ВРЕМЕННОЕ, ОСОЗНАННОЕ нарушение собственного правила §14.1 («не
-  // логировать полные контакты») — до появления реального хранилища
-  // (БД, неделя 3 по §15) контакту физически больше некуда попасть.
-  // Правило §14.1 написано про продакшн-логи/агрегаторы, не про
-  // локальный dev-терминал на этапе спайка — но это допущение, не
-  // постоянное решение. Заменить на реальное хранилище с контролем
-  // доступа до публичного запуска, не забыть.
-  //
-  // ВАЖНО (27.09): когда здесь появится реальное сохранение (БД, не
-  // console.log) — на сайте ОБЯЗАТЕЛЬНО должна появиться страница
-  // политики обработки персональных данных (152-ФЗ), см.
-  // session-plan.md §15 «Неделя 3». Сейчас (dev-стаб) юридической
-  // обязанности нет, но публиковать сохранение контактов без этой
-  // страницы — уже нельзя.
-  console.log('Новый контакт (dev, временно, без хранилища):', {
-    name,
-    contact,
-    proposalId,
-    receivedAt: new Date().toISOString(),
-  });
+  if (!serviceType) {
+    return Response.json({ error: 'Не удалось определить тип заявки' }, { status: 400 });
+  }
 
+  const result = await sendContact({ name, contact, serviceType });
+  if (!result.ok) {
+    return Response.json({ error: result.error }, { status: result.status });
+  }
+
+  // Контакты теперь хранятся в БД: до публичного запуска на сайте нужна
+  // страница политики обработки персональных данных (152-ФЗ), см. /privacy.
   return Response.json({ ok: true });
 }

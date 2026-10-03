@@ -1,6 +1,6 @@
 import type { ModelResponse, ServiceType } from './provider';
 
-const VALID_SERVICE_TYPES: ServiceType[] = [
+export const VALID_SERVICE_TYPES: ServiceType[] = [
   'telegram_automation',
   'website_landing',
   'content_automation',
