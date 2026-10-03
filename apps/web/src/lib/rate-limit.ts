@@ -1,5 +1,5 @@
 const WINDOW_MS = 60_000;
-const MAX_REQUESTS_PER_WINDOW = 5;
+const DEFAULT_MAX_REQUESTS_PER_WINDOW = 5;
 const CLEANUP_INTERVAL_MS = 5 * 60_000;
 
 // In-memory — не переживает рестарт процесса, не работает на несколько
@@ -18,12 +18,12 @@ const requestLog = new Map<string, number[]>();
 // по времени, а не по недостижимости объекта, которую отслеживает GC.
 const cleanupTimer = setInterval(() => {
   const now = Date.now();
-  for (const [ip, timestamps] of requestLog) {
+  for (const [key, timestamps] of requestLog) {
     const fresh = timestamps.filter((t) => now - t < WINDOW_MS);
     if (fresh.length === 0) {
-      requestLog.delete(ip);
+      requestLog.delete(key);
     } else {
-      requestLog.set(ip, fresh);
+      requestLog.set(key, fresh);
     }
   }
 }, CLEANUP_INTERVAL_MS);
@@ -41,16 +41,22 @@ function getClientIp(request: Request): string {
   return 'unknown';
 }
 
-export function checkRateLimit(request: Request): { rateLimited: boolean } {
-  const ip = getClientIp(request);
+// Счётчики раздельные по `scope` (имя маршрута): чат, контакт и песочница
+// не делят одну квоту. Лимит `max` у каждого маршрута свой.
+export function checkRateLimit(
+  request: Request,
+  scope: string,
+  max: number = DEFAULT_MAX_REQUESTS_PER_WINDOW,
+): { rateLimited: boolean } {
+  const key = `${scope}:${getClientIp(request)}`;
   const now = Date.now();
-  const timestamps = (requestLog.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
+  const timestamps = (requestLog.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
 
-  if (timestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+  if (timestamps.length >= max) {
     return { rateLimited: true };
   }
 
   timestamps.push(now);
-  requestLog.set(ip, timestamps);
+  requestLog.set(key, timestamps);
   return { rateLimited: false };
 }

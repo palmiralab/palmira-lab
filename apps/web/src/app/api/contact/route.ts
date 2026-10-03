@@ -6,7 +6,7 @@ const MAX_FIELD_LENGTH = 200;
 const MAX_DETAILS_LENGTH = 2000;
 
 export async function POST(request: Request) {
-  const { rateLimited } = checkRateLimit(request);
+  const { rateLimited } = checkRateLimit(request, 'contact');
   if (rateLimited) {
     return Response.json({ error: 'Слишком много запросов, попробуйте позже' }, { status: 429 });
   }

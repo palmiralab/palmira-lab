@@ -22,7 +22,7 @@ function isValidMessage(value: unknown): value is IncomingMessage {
 }
 
 export async function POST(request: Request) {
-  const { rateLimited } = checkRateLimit(request);
+  const { rateLimited } = checkRateLimit(request, 'proposal', 20);
   if (rateLimited) {
     return Response.json({ error: 'Слишком много запросов, попробуйте позже' }, { status: 429 });
   }
