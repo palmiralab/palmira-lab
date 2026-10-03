@@ -167,7 +167,11 @@ export function ProposalChat() {
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: contactName, contact: contactValue, proposalId: proposal.id }),
+        body: JSON.stringify({
+          name: contactName,
+          contact: contactValue,
+          serviceType: proposal.serviceType,
+        }),
       });
 
       if (response.ok) {
