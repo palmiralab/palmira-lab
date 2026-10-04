@@ -1,18 +1,8 @@
 'use client';
 
+import Link from 'next/link';
+import { EmailButton } from '@/components/EmailButton';
 import { Tooltip } from '@/components/Tooltip';
-
-// Не кладём email в разметку/href вообще — иначе он присутствует
-// готовой строкой в статичном HTML, которую читают ботные сборщики
-// почты без выполнения JS. Собираем mailto: по клику из двух частей —
-// строка-адрес не существует ни в HTML, ни как единая константа в
-// бандле.
-const EMAIL_USER = 'roman.palmin';
-const EMAIL_DOMAIN = 'gmail.com';
-
-function openEmail() {
-  window.location.href = `mailto:${EMAIL_USER}@${EMAIL_DOMAIN}`;
-}
 
 export function Footer() {
   return (
@@ -20,9 +10,7 @@ export function Footer() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p>© 2026 Palmira Lab</p>
         <div className="flex items-center gap-4">
-          <button onClick={openEmail} className="cursor-pointer hover:underline">
-            Почта
-          </button>
+          <EmailButton>Почта</EmailButton>
           <a
             href="https://t.me/jromkin"
             target="_blank"
@@ -43,7 +31,11 @@ export function Footer() {
       </p>
       <p className="text-sm text-slate-500 dark:text-slate-400">
         <small>
-          Персональные данные, оставленные через форму, пока не сохраняются на постоянной основе (152-ФЗ).
+          Контакты, оставленные через форму, мы храним.{' '}
+          <Link href="/privacy" className="underline">
+            Политика обработки персональных данных
+          </Link>
+          .
         </small>
       </p>
     </footer>
