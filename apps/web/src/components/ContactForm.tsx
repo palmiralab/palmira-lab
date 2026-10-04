@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { inputClass, primaryButtonClass } from '@/lib/ui-classes';
 
@@ -60,6 +61,16 @@ export function ContactForm({
         </button>
         {restartControl}
       </div>
+      <p className="text-sm text-slate-500">
+        <small>
+          Нажимая «Отправить контакт», вы соглашаетесь на{' '}
+          {/* Новая вкладка: иначе уход на /privacy сбросит чат и введённое. */}
+          <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">
+            обработку персональных данных
+          </Link>
+          .
+        </small>
+      </p>
       {contactStatus === 'error' && (
         <p className="animate-[fade-in-up_0.2s_ease-out] text-red-600 dark:text-red-400">
           Не удалось отправить, попробуйте ещё раз
