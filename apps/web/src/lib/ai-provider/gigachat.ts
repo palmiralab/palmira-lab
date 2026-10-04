@@ -1,6 +1,6 @@
 import type { ModelResponse, ProposalGenerationProvider } from './provider';
 import { buildProposalSystemPrompt, buildTextJsonProposalSystemPrompt } from './prompts';
-import { isValidModelResponse } from './validate-model-response';
+import { isValidModelResponse, normalizeModelResponse } from './validate-model-response';
 
 const OAUTH_URL = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth';
 const COMPLETIONS_URL = 'https://api.giga.chat/v1/chat/completions';
@@ -139,7 +139,7 @@ export const gigaChatProvider: ProposalGenerationProvider = {
         lastNonEmptyContent = rawContent.trim();
       }
       try {
-        const parsed: unknown = JSON.parse(extractJsonFromContent(rawContent));
+        const parsed: unknown = normalizeModelResponse(JSON.parse(extractJsonFromContent(rawContent)));
         if (!isValidModelResponse(parsed)) {
           throw new Error('GigaChat response does not match the expected shape');
         }

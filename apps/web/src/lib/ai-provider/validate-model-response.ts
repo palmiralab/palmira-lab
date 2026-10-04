@@ -1,3 +1,4 @@
+import { outcomeFor } from '../proposal-outcome';
 import type { ModelResponse, ServiceType } from './provider';
 
 export const VALID_SERVICE_TYPES: ServiceType[] = [
@@ -33,4 +34,27 @@ export function isValidModelResponse(value: unknown): value is ModelResponse {
   }
 
   return false;
+}
+
+// Модель иногда кладёт услугу в верхнеуровневый `type`: `{ "type": "manual_review" }`
+// вместо предложения с `serviceType` (для ответа «вне наших услуг» это стабильно
+// воспроизводится на GigaChat). Для услуг, у которых исход не показывает КП
+// (аудит, ручной разбор), тела предложения не нужно, поэтому принимаем такой ответ
+// как предложение с пустым телом. Для услуг с КП не трогаем: пустое КП недопустимо.
+export function normalizeModelResponse(value: unknown): unknown {
+  if (typeof value !== 'object' || value === null) return value;
+
+  const serviceType = VALID_SERVICE_TYPES.find((type) => type === (value as { type?: unknown }).type);
+  if (!serviceType || outcomeFor(serviceType) === 'quote') return value;
+
+  return {
+    type: 'proposal',
+    serviceType,
+    title: '',
+    problemSummary: '',
+    scope: [],
+    assumptions: [],
+    exclusions: [],
+    nextStep: '',
+  };
 }

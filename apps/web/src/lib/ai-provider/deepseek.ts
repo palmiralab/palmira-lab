@@ -1,6 +1,6 @@
 import type { ProposalGenerationProvider } from './provider';
 import { buildTextJsonProposalSystemPrompt } from './prompts';
-import { isValidModelResponse } from './validate-model-response';
+import { isValidModelResponse, normalizeModelResponse } from './validate-model-response';
 
 const COMPLETIONS_URL = 'https://api.deepseek.com/chat/completions';
 const MODEL = 'deepseek-chat';
@@ -78,7 +78,7 @@ export const deepSeekProvider: ProposalGenerationProvider = {
     for (let attempt = 1; attempt <= MAX_VALIDATION_ATTEMPTS; attempt++) {
       const rawContent = await requestCompletionContent(requestMessages);
       try {
-        const parsed: unknown = JSON.parse(rawContent);
+        const parsed: unknown = normalizeModelResponse(JSON.parse(rawContent));
         if (!isValidModelResponse(parsed)) {
           throw new Error('DeepSeek response does not match the expected shape');
         }
