@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import type { Proposal } from '@/lib/ai-provider/provider';
 import { TypingIndicator } from '@/components/TypingIndicator';
 import { ProgressIndicator } from '@/components/ProgressIndicator';
 import { AuditRequestCard } from '@/components/AuditRequestCard';
+import { ManualReviewCard } from '@/components/ManualReviewCard';
 import { ProposalCard } from '@/components/ProposalCard';
 import { RestartControl } from '@/components/RestartControl';
+import { detailsFromMessages } from '@/lib/lead-details';
+import { buildManualSubmission, type ContactSubmission } from '@/lib/manual-review';
 import { outcomeFor } from '@/lib/proposal-outcome';
 import { inputClass, primaryButtonClass } from '@/lib/ui-classes';
 
@@ -63,6 +66,11 @@ export function ProposalChat() {
   const stateBeforeRestartRef = useRef<ChatState>('idle');
 
   function handleRestartRequest() {
+    // Контакт уже отправлен: терять нечего, подтверждение не нужно.
+    if (contactStatus === 'sent') {
+      handleRestartConfirm();
+      return;
+    }
     stateBeforeRestartRef.current = state;
     setState('restart_confirm');
   }
@@ -162,10 +170,17 @@ export function ProposalChat() {
     }
   }
 
-  async function handleContactSubmit() {
+  function userMessageTexts(): string[] {
+    return messages.filter((m) => m.role === 'user').map((m) => m.content);
+  }
+
+  // Без аргумента заявка уходит с serviceType итога чата; карточка manual_review
+  // передаёт свой вариант (аудит/отказ) вместе с описанием.
+  async function handleContactSubmit(submission?: ContactSubmission) {
     if (!contactName.trim() || !contactValue.trim() || !proposal) return;
 
     setContactStatus('sending');
+    const chatDetails = detailsFromMessages(userMessageTexts());
 
     try {
       const response = await fetch('/api/contact', {
@@ -174,7 +189,10 @@ export function ProposalChat() {
         body: JSON.stringify({
           name: contactName,
           contact: contactValue,
-          serviceType: proposal.serviceType,
+          ...(submission ?? {
+            serviceType: proposal.serviceType,
+            ...(chatDetails && { auditAnswers: chatDetails }),
+          }),
         }),
       });
 
@@ -215,6 +233,27 @@ export function ProposalChat() {
     onContactSubmit: handleContactSubmit,
     restartControl,
   };
+
+  // Явный тип возврата: без него TypeScript не заметит исход без case.
+  function renderOutcome(current: Proposal): ReactElement {
+    switch (outcomeFor(current.serviceType)) {
+      case 'audit':
+        return <AuditRequestCard {...contactCardProps} />;
+      case 'manual':
+        return (
+          <ManualReviewCard
+            {...contactCardProps}
+            onContactSubmit={(choice) =>
+              handleContactSubmit(
+                buildManualSubmission(choice, userMessageTexts()),
+              )
+            }
+          />
+        );
+      case 'quote':
+        return <ProposalCard {...contactCardProps} proposal={current} />;
+    }
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -263,14 +302,7 @@ export function ProposalChat() {
       {error && (
         <p className="animate-[fade-in-up_0.2s_ease-out] text-red-600 dark:text-red-400">{error}</p>
       )}
-      {proposal && (
-        // manual пока показываем как КП, отдельную ветку добавим следующим блоком.
-        outcomeFor(proposal.serviceType) === 'audit' ? (
-          <AuditRequestCard {...contactCardProps} />
-        ) : (
-          <ProposalCard {...contactCardProps} proposal={proposal} />
-        )
-      )}
+      {proposal && renderOutcome(proposal)}
     </div>
   );
 }

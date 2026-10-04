@@ -52,7 +52,7 @@ export function ContactForm({
       />
       <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
         <button
-          onClick={onContactSubmit}
+          onClick={() => onContactSubmit()}
           disabled={contactStatus === 'sending'}
           className={primaryButtonClass}
         >

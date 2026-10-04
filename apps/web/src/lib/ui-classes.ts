@@ -6,3 +6,7 @@ export const inputClass =
 export const primaryButtonClass =
   'w-full rounded bg-emerald-600 px-4 py-2 font-medium text-white disabled:opacity-50 sm:w-auto ' +
   'dark:bg-emerald-400 dark:text-slate-950';
+
+export const secondaryButtonClass =
+  'w-full cursor-pointer rounded border border-slate-300 px-4 py-2 font-medium text-slate-800 sm:w-auto ' +
+  'dark:border-slate-700 dark:text-slate-100';

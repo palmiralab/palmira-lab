@@ -5,9 +5,10 @@ import { buildManualSubmission } from './manual-review';
 const messages = ['Сделайте борщ', 'Лучше украинский'];
 
 describe('buildManualSubmission', () => {
-  it('«нет, спасибо»: manual_review без описания', () => {
+  it('«нет, спасибо»: manual_review, в описании реплики посетителя', () => {
     expect(buildManualSubmission({ kind: 'declined' }, messages)).toEqual({
       serviceType: 'manual_review',
+      auditAnswers: { details: 'Сделайте борщ\nЛучше украинский' },
     });
   });
 
@@ -32,6 +33,7 @@ describe('buildManualSubmission', () => {
       serviceType: 'ai_consultation',
     });
     expect(buildManualSubmission({ kind: 'as_is' }, [])).toEqual({ serviceType: 'ai_consultation' });
+    expect(buildManualSubmission({ kind: 'declined' }, [])).toEqual({ serviceType: 'manual_review' });
   });
 
   it('длинное описание обрезается до лимита', () => {
