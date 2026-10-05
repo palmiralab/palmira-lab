@@ -42,16 +42,30 @@ function formatProposal(proposal: Record<string, unknown>): string[] {
 
   const scope = asStrings(proposal.scope);
   if (scope.length > 0) {
-    lines.push('Состав:', ...scope.map((item) => `- ${item}`));
+    lines.push('', 'Состав:', ...scope.map((item) => `- ${item}`));
   }
 
+  const assumptions = asStrings(proposal.assumptions);
+  if (assumptions.length > 0) {
+    lines.push('', 'Допущения:', ...assumptions.map((item) => `- ${item}`));
+  }
+
+  const exclusions = asStrings(proposal.exclusions);
+  if (exclusions.length > 0) {
+    lines.push('', 'Не входит:', ...exclusions.map((item) => `- ${item}`));
+  }
+
+  // Срок и цена идут одним блоком: оба необязательные, пустая строка перед
+  // блоком нужна, только если в нём что-то есть.
+  const terms: string[] = [];
   const timeline = asString(proposal.estimatedTimelineText);
-  if (timeline) lines.push(`Срок: ${timeline}`);
+  if (timeline) terms.push(`Срок: ${timeline}`);
 
   const { priceRangeMin: min, priceRangeMax: max } = proposal;
   if (typeof min === 'number' && typeof max === 'number') {
-    lines.push(`Цена: ${min}–${max} ₽`);
+    terms.push(`Цена: ${min}–${max} ₽`);
   }
+  if (terms.length > 0) lines.push('', ...terms);
 
   return lines;
 }
@@ -79,6 +93,7 @@ function formatAuditAnswers(answers: Record<string, unknown>): string[] {
 function formatLeadNotice(notice: NewLeadNotice): string {
   const head = [
     'Новая заявка',
+    '',
     `Имя: ${notice.name}`,
     `Контакт: ${notice.contact}`,
     `Услуга: ${notice.serviceType}`,
@@ -92,9 +107,11 @@ function formatLeadNotice(notice: NewLeadNotice): string {
 
   if (!body) return head.slice(0, MESSAGE_LIMIT);
 
-  const room = MESSAGE_LIMIT - head.length;
+  // Тело начинается с пустой строки (так отделено от шапки), в бюджет её
+  // длина входит вместе с телом.
+  const room = MESSAGE_LIMIT - head.length - 1;
   const text = body.length <= room ? body : `${body.slice(0, room - 1)}…`;
-  return `${head}${text}`.slice(0, MESSAGE_LIMIT);
+  return `${head}\n${text}`.slice(0, MESSAGE_LIMIT);
 }
 
 // Только отправляет: решение «сбой уведомления не ломает приём лида» живёт у

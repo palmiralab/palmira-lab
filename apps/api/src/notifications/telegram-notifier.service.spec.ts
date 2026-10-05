@@ -124,6 +124,8 @@ describe('TelegramNotifier', () => {
         title: 'Лендинг для клиники',
         problemSummary: 'Вы хотите принимать записи онлайн',
         scope: ['Дизайн', 'Вёрстка'],
+        assumptions: ['Макет предоставляет клиент'],
+        exclusions: ['Наполнение сайта текстами'],
         estimatedTimelineText: '2 недели',
         priceRangeMin: 50000,
         priceRangeMax: 80000,
@@ -135,9 +137,27 @@ describe('TelegramNotifier', () => {
     expect(text).toContain('КП (со слов сайта):\nЛендинг для клиники');
     expect(text).toContain('Задача: Вы хотите принимать записи онлайн');
     expect(text).toContain('Состав:\n- Дизайн\n- Вёрстка');
+    // Блоки КП разделены пустой строкой, иначе в чате всё сливается.
+    expect(text).toContain('- Вёрстка\n\nДопущения:\n- Макет предоставляет клиент');
+    expect(text).toContain('клиент\n\nНе входит:\n- Наполнение сайта текстами');
     expect(text).toContain('Срок: 2 недели');
     expect(text).toContain('Цена: 50000–80000 ₽');
     expect(text).not.toContain('не должно попасть');
+  });
+
+  it('заголовок «Новая заявка» отделён от данных клиента пустой строкой', async () => {
+    await makeNotifier().notifyNewLead(notice);
+
+    expect(sentBody().text).toMatch(/^Новая заявка\n\nИмя: Анна\n/);
+  });
+
+  it('отделяет шапку от КП пустой строкой', async () => {
+    await makeNotifier().notifyNewLead({
+      ...notice,
+      proposal: { title: 'Лендинг' },
+    });
+
+    expect(sentBody().text).toContain(`Лид: ${notice.leadId}\n\nКП (со слов сайта):`);
   });
 
   it('не падает на КП неожиданной формы', async () => {
