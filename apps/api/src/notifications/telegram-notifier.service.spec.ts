@@ -117,6 +117,65 @@ describe('TelegramNotifier', () => {
     );
   });
 
+  it('показывает КП кратко: название, задача, состав, срок и цена', async () => {
+    await makeNotifier().notifyNewLead({
+      ...notice,
+      proposal: {
+        title: 'Лендинг для клиники',
+        problemSummary: 'Вы хотите принимать записи онлайн',
+        scope: ['Дизайн', 'Вёрстка'],
+        estimatedTimelineText: '2 недели',
+        priceRangeMin: 50000,
+        priceRangeMax: 80000,
+        disclaimer: 'не должно попасть в сообщение',
+      },
+    });
+
+    const text = sentBody().text as string;
+    expect(text).toContain('КП:\nЛендинг для клиники');
+    expect(text).toContain('Задача: Вы хотите принимать записи онлайн');
+    expect(text).toContain('Состав:\n- Дизайн\n- Вёрстка');
+    expect(text).toContain('Срок: 2 недели');
+    expect(text).toContain('Цена: 50000–80000 ₽');
+    expect(text).not.toContain('не должно попасть');
+  });
+
+  it('не падает на КП неожиданной формы', async () => {
+    await makeNotifier().notifyNewLead({
+      ...notice,
+      proposal: { title: 42, scope: 'не список', priceRangeMin: '10' },
+    });
+
+    const text = sentBody().text as string;
+    expect(text).toContain(notice.leadId);
+    expect(text).not.toContain('Состав:');
+    expect(text).not.toContain('Цена:');
+  });
+
+  it('одно свободное описание подписывает как «Запрос клиента»', async () => {
+    await makeNotifier().notifyNewLead({
+      ...notice,
+      auditAnswers: { details: 'Нужен бот для записи' },
+    });
+
+    const text = sentBody().text as string;
+    expect(text).toContain('Запрос клиента:\nНужен бот для записи');
+    expect(text).not.toContain('Анкета аудита');
+  });
+
+  it('при длинном КП режет тело, а шапка с контактом и id лида остаётся целой', async () => {
+    await makeNotifier().notifyNewLead({
+      ...notice,
+      proposal: { title: 'Б'.repeat(10_000) },
+    });
+
+    const text = sentBody().text as string;
+    expect(text.length).toBeLessThanOrEqual(4096);
+    expect(text).toContain(`Контакт: ${notice.contact}`);
+    expect(text).toContain(`Лид: ${notice.leadId}`);
+    expect(text.endsWith('…')).toBe(true);
+  });
+
   it('обрезает текст до лимита Telegram (4096 символов)', async () => {
     await makeNotifier().notifyNewLead({
       ...notice,

@@ -112,6 +112,19 @@ describe('POST /api/v1/intake/contact (e2e)', () => {
     expect(lead.auditAnswers).toEqual(auditAnswers);
   });
 
+  it('сохраняет КП снимком и передаёт его в уведомление', async () => {
+    const proposal = { title: 'Лендинг', scope: ['Дизайн', 'Вёрстка'] };
+    const res = await post({ ...validBody, proposal }).expect(201);
+
+    const lead = await prisma.lead.findUniqueOrThrow({
+      where: { id: res.body.leadId },
+    });
+    expect(lead.proposal).toEqual(proposal);
+    expect(notifier.notifyNewLead).toHaveBeenCalledWith(
+      expect.objectContaining({ leadId: res.body.leadId, proposal }),
+    );
+  });
+
   it('привязывает разговор к лиду в той же транзакции', async () => {
     const conversation = await newConversation();
     const res = await post({

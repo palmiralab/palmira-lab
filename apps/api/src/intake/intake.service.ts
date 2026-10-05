@@ -48,6 +48,7 @@ export class IntakeService {
           contact: dto.contact,
           serviceType: dto.serviceType,
           auditAnswers: dto.auditAnswers,
+          proposal: dto.proposal,
         },
       });
 
@@ -87,6 +88,7 @@ export class IntakeService {
       contact: dto.contact,
       serviceType: dto.serviceType,
       auditAnswers: dto.auditAnswers,
+      proposal: dto.proposal,
     });
 
     return { leadId };
