@@ -135,6 +135,11 @@ describe('POST /api/v1/intake/contact (e2e)', () => {
     ['conversationId не uuid', { ...validBody, conversationId: 'abc' }],
     ['лишнее поле', { ...validBody, status: 'won' }],
     ['auditAnswers не объект', { ...validBody, auditAnswers: 'текст' }],
+    ['proposal не объект', { ...validBody, proposal: 'текст' }],
+    [
+      'proposal больше 20 КБ',
+      { ...validBody, proposal: { title: 'x'.repeat(21 * 1024) } },
+    ],
   ])('отвечает 400: %s, лид не создаётся', async (_name, body) => {
     await post(body).expect(400);
     expect(await countTestLeads()).toBe(0);

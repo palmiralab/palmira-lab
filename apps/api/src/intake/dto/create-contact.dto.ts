@@ -10,10 +10,14 @@ import {
 } from 'class-validator';
 import { ServiceType } from '../../generated/prisma/enums.js';
 import type { Prisma } from '../../generated/prisma/client.js';
+import { MaxJsonBytes } from './max-json-bytes.decorator.js';
 
 // Лимит как в веб-форме (MAX_FIELD_LENGTH в apps/web): иначе API принимал бы
 // то, что сайт отсекает, и наоборот.
 const MAX_FIELD_LENGTH = 200;
+
+// Предел размера КП в заявке: реальное КП занимает 1–3 КБ, 20 КБ даёт запас.
+const MAX_PROPOSAL_BYTES = 20 * 1024;
 
 // Обрезаем пробелы до проверки длины: строка из одних пробелов не должна
 // проходить как непустая.
@@ -43,6 +47,14 @@ export class CreateContactDto {
   @IsOptional()
   @IsObject()
   auditAnswers?: Prisma.InputJsonObject;
+
+  // КП, которое видел клиент, снимком. Форму не проверяем (она меняется на
+  // сайте), но размер режем: API публичный, и сверх общего лимита тела запроса
+  // (100 КБ по умолчанию у Express) в базу и Telegram такое не нужно.
+  @IsOptional()
+  @IsObject()
+  @MaxJsonBytes(MAX_PROPOSAL_BYTES)
+  proposal?: Prisma.InputJsonObject;
 
   // Необязательный: сайт пока не открывает разговор в API (его чат ходит в
   // Next-маршруты), после подключения станет приходить всегда.
