@@ -45,6 +45,10 @@ model Lead {
   // проходил. Фиксированный набор вопросов, читаются вместе, поиска по
   // отдельным ответам нет, поэтому JSON, а не отдельная таблица.
   auditAnswers Json?       @map("audit_answers")
+  // КП, которое видел клиент на момент заявки, снимком целиком; пусто, если
+  // заявка пришла без КП (аудит, manual_review). JSON по той же причине, что
+  // и auditAnswers: читается целиком, форма КП может меняться.
+  proposal     Json?
   status       LeadStatus  @default(new)
   createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)

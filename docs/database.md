@@ -21,6 +21,7 @@ erDiagram
         text budget_hint "nullable"
         text deadline_hint "nullable"
         jsonb audit_answers "nullable"
+        jsonb proposal "nullable"
         lead_status status "NOT NULL, default new"
         timestamptz created_at "NOT NULL, default now (3)"
         timestamptz updated_at "NOT NULL, задаёт Prisma (3)"
@@ -50,6 +51,7 @@ erDiagram
 | `budget_hint` | `text` | да | | пожелание клиента, свободный текст |
 | `deadline_hint` | `text` | да | | пожелание клиента, свободный текст |
 | `audit_answers` | `jsonb` | да | | ответы анкеты бесплатного аудита целиком; пусто, пока человек её не проходил. JSON, а не отдельная таблица: набор вопросов фиксирован, ответы читаются вместе, поиска по отдельным нет. Если появятся несколько аудитов на лида или версии анкеты, переносим в таблицу |
+| `proposal` | `jsonb` | да | | КП, которое видел клиент на момент заявки, снимком целиком; пусто, если заявка пришла без КП (аудит, manual_review). JSON по той же причине, что и `audit_answers`: читается целиком, форма КП может меняться |
 | `status` | `lead_status` | нет | `'new'` | enum, см. ниже |
 | `created_at` | `timestamptz(3)` | нет | `CURRENT_TIMESTAMP` | |
 | `updated_at` | `timestamptz(3)` | нет | нет | заполняет Prisma при записи; сырой SQL должен задавать сам |
