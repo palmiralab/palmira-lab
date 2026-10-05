@@ -59,6 +59,51 @@ describe('POST /api/contact', () => {
     expect(sendContact.mock.calls[0][0].auditAnswers).toBeUndefined();
   });
 
+  it('КП из запроса уходит в API как есть', async () => {
+    const proposal = { title: 'Бот для записи', scope: ['Сценарий', 'Подключение'] };
+
+    await post({ ...valid, proposal });
+
+    expect(sendContact).toHaveBeenCalledWith(expect.objectContaining({ proposal }));
+  });
+
+  it.each([
+    ['строка', 'текст'],
+    ['массив', [1, 2]],
+    ['число', 42],
+  ])('КП не объект (%s): отбрасываем, заявка уходит без него', async (_title, proposal) => {
+    const response = await post({ ...valid, proposal });
+
+    expect(response.status).toBe(200);
+    expect(sendContact.mock.calls[0][0].proposal).toBeUndefined();
+  });
+
+  it('отброшенное КП попадает в лог без содержимого', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await post({ ...valid, proposal: 'секретный текст' });
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).not.toContain('секретный текст');
+    warn.mockRestore();
+  });
+
+  it('заявка без КП ничего не логирует', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await post(valid);
+
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('слишком большое КП: 400, в API не ходим', async () => {
+    const response = await post({ ...valid, proposal: { title: 'а'.repeat(11_000) } });
+
+    expect(response.status).toBe(400);
+    expect(sendContact).not.toHaveBeenCalled();
+  });
+
   it('слишком длинное описание: 400, в API не ходим', async () => {
     const response = await post({ ...valid, auditAnswers: { details: 'а'.repeat(2001) } });
 

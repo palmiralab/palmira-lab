@@ -132,7 +132,7 @@ describe('TelegramNotifier', () => {
     });
 
     const text = sentBody().text as string;
-    expect(text).toContain('КП:\nЛендинг для клиники');
+    expect(text).toContain('КП (со слов сайта):\nЛендинг для клиники');
     expect(text).toContain('Задача: Вы хотите принимать записи онлайн');
     expect(text).toContain('Состав:\n- Дизайн\n- Вёрстка');
     expect(text).toContain('Срок: 2 недели');

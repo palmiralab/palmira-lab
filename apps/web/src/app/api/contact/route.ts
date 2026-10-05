@@ -1,4 +1,4 @@
-import { MAX_DETAILS_LENGTH } from '@/lib/contact-limits';
+import { MAX_DETAILS_LENGTH, MAX_PROPOSAL_BYTES } from '@/lib/contact-limits';
 import { VALID_SERVICE_TYPES } from '@/lib/ai-provider/validate-model-response';
 import { sendContact } from '@/lib/intake-client';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -18,6 +18,17 @@ export async function POST(request: Request) {
   const details =
     typeof body?.auditAnswers?.details === 'string' ? body.auditAnswers.details.trim() : '';
 
+  // КП приходит из браузера, поэтому ему не доверяем: не объект отбрасываем
+  // (заявка важнее КП), слишком большое отклоняем. Отбрасывание не молчаливое:
+  // КП делаем мы сами, и не-объект может быть нашим багом на фронте. В лог только
+  // тип, не содержимое.
+  const isProposalObject =
+    body?.proposal && typeof body.proposal === 'object' && !Array.isArray(body.proposal);
+  if (body?.proposal != null && !isProposalObject) {
+    console.warn(`КП в заявке отброшено: ожидался объект, пришёл ${typeof body.proposal}`);
+  }
+  const proposal = isProposalObject ? (body.proposal as Record<string, unknown>) : undefined;
+
   if (!name || !contact) {
     return Response.json({ error: 'Укажите имя и контакт для связи' }, { status: 400 });
   }
@@ -30,6 +41,10 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Слишком длинное описание' }, { status: 400 });
   }
 
+  if (proposal && new TextEncoder().encode(JSON.stringify(proposal)).length > MAX_PROPOSAL_BYTES) {
+    return Response.json({ error: 'Слишком большое КП' }, { status: 400 });
+  }
+
   if (!serviceType) {
     return Response.json({ error: 'Не удалось определить тип заявки' }, { status: 400 });
   }
@@ -39,6 +54,7 @@ export async function POST(request: Request) {
     contact,
     serviceType,
     auditAnswers: details ? { details } : undefined,
+    proposal,
   });
   if (!result.ok) {
     return Response.json({ error: result.error }, { status: result.status });

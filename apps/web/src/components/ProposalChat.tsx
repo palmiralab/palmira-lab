@@ -200,6 +200,9 @@ export function ProposalChat() {
           ...(submission ?? {
             serviceType: proposal.serviceType,
             ...(chatDetails && { auditAnswers: chatDetails }),
+            // КП шлём только с исходом «quote»: у аудита и manual_review
+            // состава работ для заявки нет.
+            ...(outcomeFor(proposal.serviceType) === 'quote' && { proposal }),
           }),
         }),
       });

@@ -31,7 +31,8 @@ const asStrings = (value: unknown): string[] =>
 // того типа (форму КП задаёт сайт), поэтому берём только то, что похоже на
 // ожидаемое.
 function formatProposal(proposal: Record<string, unknown>): string[] {
-  const lines = ['КП:'];
+  // Подпись честная: КП пришло от сайта (браузера), сервер его не проверял.
+  const lines = ['КП (со слов сайта):'];
 
   const title = asString(proposal.title);
   if (title) lines.push(title);
