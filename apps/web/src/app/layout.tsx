@@ -19,11 +19,13 @@ export const metadata: Metadata = {
 };
 
 // Ставит класс .dark до первой отрисовки — иначе страница на долю секунды
-// мигнёт системной темой, прежде чем React применит сохранённый выбор.
+// мигнёт светлой темой, прежде чем React применит сохранённый выбор. По
+// умолчанию (выбора ещё не было) тема светлая, системная тема не учитывается
+// (решение для MVP). Вернуть системную: matchMedia('(prefers-color-scheme: dark)').
 const themeInitScript = `
   try {
     var stored = localStorage.getItem('theme');
-    var dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var dark = stored === 'dark';
     document.documentElement.classList.toggle('dark', dark);
   } catch (e) {}
 `;
