@@ -8,8 +8,10 @@ import { AuditRequestCard } from '@/components/AuditRequestCard';
 import { ManualReviewCard } from '@/components/ManualReviewCard';
 import { ProposalCard } from '@/components/ProposalCard';
 import { RestartControl } from '@/components/RestartControl';
+import { chatPlaceholders, chatStarters } from '@/lib/content';
 import { detailsFromMessages } from '@/lib/lead-details';
 import { buildManualSubmission, type ContactSubmission } from '@/lib/manual-review';
+import { useRandomItem } from '@/lib/use-random-item';
 import { outcomeFor } from '@/lib/proposal-outcome';
 import { inputClass, primaryButtonClass } from '@/lib/ui-classes';
 
@@ -57,6 +59,7 @@ export function ProposalChat() {
   const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
   const draftInputRef = useRef<HTMLTextAreaElement>(null);
+  const startPlaceholder = useRandomItem(chatPlaceholders);
 
   // 'restart_confirm' перекрывает state, поэтому то, к чему нужно вернуться
   // при отмене ('idle', 'error', 'collecting_contact' — в зависимости от
@@ -101,6 +104,11 @@ export function ProposalChat() {
       draftInputRef.current?.focus();
     }
   }, [state]);
+
+  function applyStarter(text: string) {
+    setDraft(text);
+    draftInputRef.current?.focus();
+  }
 
   async function handleSend() {
     const content = draft.trim();
@@ -257,6 +265,17 @@ export function ProposalChat() {
 
   return (
     <div className="flex flex-col gap-3">
+      {messages.length === 0 && (
+        <div className="flex flex-col gap-2">
+          <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+            Опишите задачу — подготовим предложение
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400">
+            Расскажите своими словами, что нужно: бот, сайт или автоматизация рутины. ИИ‑помощник
+            задаст 2–4 уточняющих вопроса и соберёт состав работ. Бесплатно и без регистрации.
+          </p>
+        </div>
+      )}
       {messages.length > 0 && (
         <div className="flex flex-col gap-2">
           {messages.map((m, i) => (
@@ -282,7 +301,7 @@ export function ProposalChat() {
             ref={draftInputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder={messages.length === 0 ? 'Опишите, что нужно сделать' : 'Ваш ответ'}
+            placeholder={messages.length === 0 ? (startPlaceholder ?? '') : 'Ваш ответ'}
             rows={3}
             disabled={state === 'waiting_reply'}
             className={inputClass}
@@ -297,6 +316,22 @@ export function ProposalChat() {
             </button>
             {restartControl}
           </div>
+          {messages.length === 0 && (
+            <div className="flex flex-col gap-2">
+              <span className="text-sm text-slate-500">Или начните с примера:</span>
+              <div className="flex flex-wrap gap-2">
+                {chatStarters.map((starter) => (
+                  <button
+                    key={starter.label}
+                    onClick={() => applyStarter(starter.text)}
+                    className="cursor-pointer rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:border-emerald-600 dark:border-slate-700 dark:text-slate-300 dark:hover:border-emerald-400"
+                  >
+                    {starter.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
       {error && (
