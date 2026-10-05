@@ -16,6 +16,10 @@ import { MaxJsonBytes } from './max-json-bytes.decorator.js';
 // то, что сайт отсекает, и наоборот.
 const MAX_FIELD_LENGTH = 200;
 
+// Предел размера ответов анкеты: 7 вопросов с развёрнутыми ответами занимают
+// 2–4 КБ, 10 КБ даёт запас.
+const MAX_AUDIT_ANSWERS_BYTES = 10 * 1024;
+
 // Предел размера КП в заявке: реальное КП занимает 1–3 КБ, 20 КБ даёт запас.
 const MAX_PROPOSAL_BYTES = 20 * 1024;
 
@@ -42,10 +46,11 @@ export class CreateContactDto {
   @IsEnum(ServiceType)
   serviceType!: ServiceType;
 
-  // Ответы анкеты аудита целиком; структуру пока не проверяем (набор
-  // вопросов задаётся на сайте и может меняться).
+  // Ответы анкеты аудита целиком; структуру не проверяем (набор вопросов
+  // задаётся на сайте и может меняться), но размер режем, как у proposal.
   @IsOptional()
   @IsObject()
+  @MaxJsonBytes(MAX_AUDIT_ANSWERS_BYTES)
   auditAnswers?: Prisma.InputJsonObject;
 
   // КП, которое видел клиент, снимком. Форму не проверяем (она меняется на

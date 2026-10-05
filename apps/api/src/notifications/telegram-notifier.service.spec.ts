@@ -82,6 +82,46 @@ describe('TelegramNotifier', () => {
     );
   });
 
+  it('анкету из пар вопрос-ответ выводит читаемо, массив вариантов через запятую', async () => {
+    await makeNotifier().notifyNewLead({
+      ...notice,
+      serviceType: 'ai_consultation',
+      auditAnswers: {
+        businessDescription: {
+          question: 'Что за бизнес?',
+          answer: 'Салон красоты',
+        },
+        currentTools: {
+          question: 'В чём это делается сейчас?',
+          answer: ['Excel', 'Мессенджеры'],
+        },
+      },
+    });
+
+    const text = sentBody().text as string;
+    expect(text).toContain(
+      'Анкета аудита:\n\nЧто за бизнес?\nСалон красоты\n\nВ чём это делается сейчас?\nExcel, Мессенджеры',
+    );
+    expect(text).not.toContain('businessDescription');
+  });
+
+  it('пропускает неотвеченные вопросы анкеты', async () => {
+    await makeNotifier().notifyNewLead({
+      ...notice,
+      serviceType: 'ai_consultation',
+      auditAnswers: {
+        a: { question: 'Что за бизнес?', answer: 'Салон' },
+        b: { question: 'Что пробовали?', answer: '   ' },
+        c: { question: 'Какие инструменты?', answer: [] },
+      },
+    });
+
+    const text = sentBody().text as string;
+    expect(text).toContain('Что за бизнес?');
+    expect(text).not.toContain('Что пробовали?');
+    expect(text).not.toContain('Какие инструменты?');
+  });
+
   it('ничего не шлёт, если токен или chat_id не заданы', async () => {
     await makeNotifier({}).notifyNewLead(notice);
     await makeNotifier({ TELEGRAM_BOT_TOKEN: TOKEN }).notifyNewLead(notice);

@@ -70,6 +70,18 @@ function formatProposal(proposal: Record<string, unknown>): string[] {
   return lines;
 }
 
+// Ответ анкеты, как его присылает сайт: текст вопроса и ответ (строка или
+// список выбранных вариантов). Вопрос лежит рядом с ответом, чтобы заявка читалась
+// без справочника, даже если сайт потом поменяет формулировки.
+// undefined: значение не похоже на пару вопрос-ответ; null: пара, но без ответа.
+function readQa(value: unknown): { question: string; answer: string } | null | undefined {
+  if (typeof value !== 'object' || value === null || !('question' in value)) return undefined;
+  const { question, answer } = value as Record<string, unknown>;
+  const q = asString(question);
+  const a = Array.isArray(answer) ? asStrings(answer).join(', ') : asString(answer);
+  return q && a ? { question: q, answer: a } : null;
+}
+
 function formatAuditAnswers(answers: Record<string, unknown>): string[] {
   const entries = Object.entries(answers);
   // Заявка с одним свободным описанием (manual_review): это не анкета, а
@@ -78,13 +90,18 @@ function formatAuditAnswers(answers: Record<string, unknown>): string[] {
     entries.length === 1 && entries[0][0] === 'details' && asString(entries[0][1]);
   if (onlyDetails) return ['Запрос клиента:', onlyDetails];
 
-  return [
-    'Анкета аудита:',
-    ...entries.map(
-      ([question, answer]) =>
-        `${question}: ${typeof answer === 'string' ? answer : JSON.stringify(answer)}`,
-    ),
-  ];
+  const lines = ['Анкета аудита:'];
+  for (const [key, value] of entries) {
+    const qa = readQa(value);
+    if (qa === null) continue; // вопрос без ответа
+    if (qa) {
+      lines.push('', qa.question, qa.answer);
+    } else if (value !== null && value !== undefined && value !== '') {
+      // Старый или неожиданный вид: показываем «ключ: значение», как раньше.
+      lines.push(`${key}: ${typeof value === 'string' ? value : JSON.stringify(value)}`);
+    }
+  }
+  return lines;
 }
 
 // Шапка (имя, контакт, услуга, id лида) идёт целиком и всегда: по ней можно
