@@ -52,6 +52,29 @@ export function progressLabel(step: number): string {
   return step >= CONTACT_STEP ? 'Последний шаг' : `Вопрос ${step + 1} из ${QUESTION_COUNT}`;
 }
 
+// При уходе с шага убирает пробелы по краям у текстового ответа на нём. Пока
+// человек печатает, значение хранится как есть (пробел внутри фразы нужен), а
+// «подчищается» только на переходе. Ответ из одних пробелов удаляем совсем, чтобы
+// он не лежал в состоянии мусором. Если чистить нечего, возвращает те же answers.
+function trimmedAnswers(state: WizardState): RawAnswers {
+  const question = AUDIT_QUESTIONS[state.step];
+  if (!question || question.type !== 'text') return state.answers;
+
+  const value = state.answers[question.key];
+  if (typeof value !== 'string') return state.answers;
+
+  const trimmed = value.trim();
+  if (trimmed === value) return state.answers;
+
+  const answers = { ...state.answers };
+  if (trimmed) {
+    answers[question.key] = trimmed;
+  } else {
+    delete answers[question.key];
+  }
+  return answers;
+}
+
 // Чистая функция: из старого состояния и действия делает новое, старое не
 // трогает. Если действие ничего не меняет (например, «вперёд» при пустом
 // обязательном ответе), возвращает то же состояние, и React не перерисовывает.
@@ -60,9 +83,13 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
     case 'answer':
       return { ...state, answers: { ...state.answers, [action.key]: action.value } };
     case 'next':
-      return canGoNext(state) ? { ...state, step: state.step + 1 } : state;
+      return canGoNext(state)
+        ? { ...state, step: state.step + 1, answers: trimmedAnswers(state) }
+        : state;
     case 'back':
-      return state.step > 0 ? { ...state, step: state.step - 1 } : state;
+      return state.step > 0
+        ? { ...state, step: state.step - 1, answers: trimmedAnswers(state) }
+        : state;
     case 'setName':
       return { ...state, name: action.value };
     case 'setContact':

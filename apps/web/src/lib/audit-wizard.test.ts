@@ -87,6 +87,59 @@ describe('wizardReducer', () => {
     expect(canGoNext(atContacts)).toBe(false);
   });
 
+  describe('подрезка пробелов при уходе с шага', () => {
+    it('вперёд: убирает пробелы по краям у текстового ответа', () => {
+      const state = run([
+        { type: 'answer', key: 'businessDescription', value: '  Салон  красоты \n' },
+        { type: 'next' },
+      ]);
+
+      // внутренние пробелы не трогаем, только края
+      expect(state.answers.businessDescription).toBe('Салон  красоты');
+    });
+
+    it('назад: тоже подрезает', () => {
+      // answerRequired приводит на шаг 2; два «вперёд» дают шаг 4 (triedBefore)
+      const state = run([
+        ...answerRequired,
+        { type: 'next' },
+        { type: 'next' },
+        { type: 'answer', key: 'triedBefore', value: '  пробовали CRM  ' },
+        { type: 'back' },
+      ]);
+
+      expect(state.answers.triedBefore).toBe('пробовали CRM');
+    });
+
+    it('ответ из одних пробелов у необязательного вопроса удаляется', () => {
+      const state = run([
+        ...answerRequired,
+        { type: 'next' },
+        { type: 'next' },
+        { type: 'answer', key: 'triedBefore', value: '    ' },
+        { type: 'next' },
+      ]);
+
+      expect(state.answers).not.toHaveProperty('triedBefore');
+    });
+
+    it('пока человек печатает, пробелы по краям сохраняются', () => {
+      const state = run([{ type: 'answer', key: 'businessDescription', value: 'Салон ' }]);
+
+      expect(state.answers.businessDescription).toBe('Салон ');
+    });
+
+    it('выбор из вариантов не трогает, и без чистки answers остаётся тем же объектом', () => {
+      const before = run([
+        ...answerRequired,
+        { type: 'answer', key: 'weeklyHours', value: 'До 5 часов' },
+      ]);
+      const after = wizardReducer(before, { type: 'next' });
+
+      expect(after.answers).toBe(before.answers);
+    });
+  });
+
   it('имя и контакт сохраняются', () => {
     const state = run([
       { type: 'setName', value: 'Анна' },
