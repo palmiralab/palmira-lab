@@ -157,6 +157,8 @@ export function AuditQuestionnaire({
               {skipping ? 'Пропустить' : 'Далее'}
             </button>
           </div>
+          {/* В чате без этого человек не смог бы начать заново, пока не дойдёт до контактов. */}
+          {restartControl}
         </>
       ) : (
         <>

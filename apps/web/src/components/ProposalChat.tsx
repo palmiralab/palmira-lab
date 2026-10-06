@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactElement } from 'react';
 import type { Proposal } from '@/lib/ai-provider/provider';
 import { TypingIndicator } from '@/components/TypingIndicator';
 import { ProgressIndicator } from '@/components/ProgressIndicator';
-import { AuditRequestCard } from '@/components/AuditRequestCard';
+import { AuditQuestionnaire } from '@/components/AuditQuestionnaire';
 import { ManualReviewCard } from '@/components/ManualReviewCard';
 import { ProposalCard } from '@/components/ProposalCard';
 import { RestartControl } from '@/components/RestartControl';
@@ -249,7 +249,14 @@ export function ProposalChat() {
   function renderOutcome(current: Proposal): ReactElement {
     switch (outcomeFor(current.serviceType)) {
       case 'audit':
-        return <AuditRequestCard {...contactCardProps} />;
+        // Анкета сама собирает контакт и шлёт заявку, поэтому contactCardProps ей не
+        // нужны; реплики из чата прикладываются к анкете отдельной парой.
+        return (
+          <AuditQuestionnaire
+            chatContext={userMessageTexts().join('\n')}
+            restartControl={restartControl}
+          />
+        );
       case 'manual':
         return (
           <ManualReviewCard
