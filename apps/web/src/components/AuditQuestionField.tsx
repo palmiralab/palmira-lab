@@ -1,5 +1,5 @@
 import type { AuditQuestion } from '@/lib/audit-questions';
-import { inputClass } from '@/lib/ui-classes';
+import { TextArea } from '@/components/ui/TextArea';
 
 const chipBase = 'cursor-pointer rounded-full border px-3 py-1.5 text-sm';
 const chipOn =
@@ -21,14 +21,13 @@ type AuditQuestionFieldProps = {
 export function AuditQuestionField({ question, value, onChange }: AuditQuestionFieldProps) {
   if (question.type === 'text') {
     return (
-      <textarea
+      <TextArea
         value={typeof value === 'string' ? value : ''}
-        onChange={(e) => onChange(e.target.value)}
+        onValueChange={onChange}
         maxLength={question.maxLength}
-        rows={4}
+        showCounter
         placeholder={question.placeholder}
         aria-label={question.question}
-        className={inputClass}
       />
     );
   }
