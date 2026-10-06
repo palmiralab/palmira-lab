@@ -10,7 +10,7 @@ import { ProposalCard } from '@/components/ProposalCard';
 import { RestartControl } from '@/components/RestartControl';
 import { chatPlaceholders, chatStarters } from '@/lib/content';
 import { detailsFromMessages } from '@/lib/lead-details';
-import { buildManualSubmission, type ContactSubmission } from '@/lib/manual-review';
+import { buildDeclinedSubmission, type ContactSubmission } from '@/lib/manual-review';
 import { useRandomItem } from '@/lib/use-random-item';
 import { outcomeFor } from '@/lib/proposal-outcome';
 import { inputClass, primaryButtonClass } from '@/lib/ui-classes';
@@ -261,11 +261,8 @@ export function ProposalChat() {
         return (
           <ManualReviewCard
             {...contactCardProps}
-            onContactSubmit={(choice) =>
-              handleContactSubmit(
-                buildManualSubmission(choice, userMessageTexts()),
-              )
-            }
+            chatContext={userMessageTexts().join('\n')}
+            onContactSubmit={() => handleContactSubmit(buildDeclinedSubmission(userMessageTexts()))}
           />
         );
       case 'quote':
