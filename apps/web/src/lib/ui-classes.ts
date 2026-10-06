@@ -4,7 +4,7 @@ export const inputClass =
   'dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-emerald-400';
 
 export const primaryButtonClass =
-  'w-full rounded bg-emerald-600 px-4 py-2 font-medium text-white disabled:opacity-50 sm:w-auto ' +
+  'w-full cursor-pointer rounded bg-emerald-600 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto ' +
   'dark:bg-emerald-400 dark:text-slate-950';
 
 export const secondaryButtonClass =

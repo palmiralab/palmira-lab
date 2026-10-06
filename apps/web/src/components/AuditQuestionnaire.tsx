@@ -115,10 +115,18 @@ export function AuditQuestionnaire({
       {question ? (
         <>
           <div className="flex flex-col gap-3">
-            <h3 className="font-medium text-slate-900 dark:text-slate-100">{question.question}</h3>
-            {!question.required && (
-              <p className="text-sm text-slate-500 dark:text-slate-400">Можно пропустить</p>
-            )}
+            <h3 className="font-medium text-slate-900 dark:text-slate-100">
+              {question.question}
+              {question.required && (
+                // Звёздочка для глаз; скринридеру хватает подписи ниже.
+                <span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">
+                  *
+                </span>
+              )}
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {question.required ? 'Обязательный вопрос' : 'Можно пропустить'}
+            </p>
             <AuditQuestionField
               // key: на каждом шаге поле создаётся заново, без хвостов прошлого вопроса.
               key={question.key}
