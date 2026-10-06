@@ -17,6 +17,9 @@ type ManualReviewCardProps = {
   // Реплики посетителя из чата: уходят в анкету аудита отдельной парой.
   chatContext?: string;
   restartControl?: ReactNode;
+  // Анкета аудита из этой карточки отправлена (чат перестаёт спрашивать подтверждение
+  // при «Начать заново»).
+  onAuditSent?: () => void;
 };
 
 type Step = 'choose' | 'audit' | 'declined';
@@ -31,13 +34,20 @@ const DECLINED_INTRO =
 export function ManualReviewCard({
   chatContext,
   restartControl,
+  onAuditSent,
   ...contactProps
 }: ManualReviewCardProps) {
   const [step, setStep] = useState<Step>('choose');
 
   // Аудит: карточка целиком заменяется анкетой, у неё своя рамка и заголовок.
   if (step === 'audit') {
-    return <AuditQuestionnaire chatContext={chatContext} restartControl={restartControl} />;
+    return (
+      <AuditQuestionnaire
+        chatContext={chatContext}
+        restartControl={restartControl}
+        onSent={onAuditSent}
+      />
+    );
   }
 
   return (

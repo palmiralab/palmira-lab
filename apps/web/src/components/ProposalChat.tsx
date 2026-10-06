@@ -255,6 +255,7 @@ export function ProposalChat() {
           <AuditQuestionnaire
             chatContext={userMessageTexts().join('\n')}
             restartControl={restartControl}
+            onSent={() => setContactStatus('sent')}
           />
         );
       case 'manual':
@@ -262,6 +263,7 @@ export function ProposalChat() {
           <ManualReviewCard
             {...contactCardProps}
             chatContext={userMessageTexts().join('\n')}
+            onAuditSent={() => setContactStatus('sent')}
             onContactSubmit={() => handleContactSubmit(buildDeclinedSubmission(userMessageTexts()))}
           />
         );

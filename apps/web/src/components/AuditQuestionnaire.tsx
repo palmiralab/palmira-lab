@@ -25,6 +25,9 @@ type AuditQuestionnaireProps = {
   restartControl?: ReactNode;
   // На странице /audit свой заголовок h1, и повтор внутри карточки лишний.
   showHeading?: boolean;
+  // Заявка отправлена. Чат по этому знает, что терять нечего, и не просит
+  // подтверждения при «Начать заново».
+  onSent?: () => void;
 };
 
 // Статус запроса живёт здесь, а не в reducer: это не данные анкеты, а состояние
@@ -35,6 +38,7 @@ export function AuditQuestionnaire({
   chatContext,
   restartControl,
   showHeading = true,
+  onSent,
 }: AuditQuestionnaireProps) {
   // state: шаг, ответы, имя, контакт. dispatch: способ сообщить визарду, что
   // произошло. Правила переходов лежат в wizardReducer, компонент их не знает.
@@ -57,6 +61,7 @@ export function AuditQuestionnaire({
 
     if (result.ok) {
       setStatus('sent');
+      onSent?.();
     } else {
       setStatus('error');
       setErrorText(result.message);
