@@ -12,6 +12,12 @@ type ContactFormProps = {
   // Текст после успешной отправки: у КП и у заявки на аудит он разный.
   successText: string;
   restartControl?: ReactNode;
+  // Необязательные настройки для других форм (анкета аудита). Без них форма
+  // выглядит и ведёт себя как раньше.
+  heading?: string;
+  submitLabel?: string;
+  errorText?: string;
+  submitDisabled?: boolean;
 };
 
 export function ContactForm({
@@ -23,6 +29,10 @@ export function ContactForm({
   onContactSubmit,
   successText,
   restartControl,
+  heading = 'Оставить контакт',
+  submitLabel = 'Отправить контакт',
+  errorText = 'Не удалось отправить, попробуйте ещё раз',
+  submitDisabled = false,
 }: ContactFormProps) {
   if (contactStatus === 'sent') {
     return (
@@ -35,7 +45,7 @@ export function ContactForm({
 
   return (
     <div className="flex flex-col gap-2 border-t border-slate-200 pt-4 dark:border-slate-800">
-      <h3 className="font-medium text-slate-900 dark:text-slate-100">Оставить контакт</h3>
+      <h3 className="font-medium text-slate-900 dark:text-slate-100">{heading}</h3>
       <p className="text-sm text-slate-500">
         <small>Чтобы связаться с вами — ничего лишнего не собираем.</small>
       </p>
@@ -54,16 +64,16 @@ export function ContactForm({
       <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
         <button
           onClick={() => onContactSubmit()}
-          disabled={contactStatus === 'sending'}
+          disabled={contactStatus === 'sending' || submitDisabled}
           className={primaryButtonClass}
         >
-          {contactStatus === 'sending' ? 'Отправляю...' : 'Отправить контакт'}
+          {contactStatus === 'sending' ? 'Отправляю...' : submitLabel}
         </button>
         {restartControl}
       </div>
       <p className="text-sm text-slate-500">
         <small>
-          Нажимая «Отправить контакт», вы соглашаетесь на{' '}
+          Нажимая «{submitLabel}», вы соглашаетесь на{' '}
           {/* Новая вкладка: иначе уход на /privacy сбросит чат и введённое. */}
           <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">
             обработку персональных данных
@@ -73,7 +83,7 @@ export function ContactForm({
       </p>
       {contactStatus === 'error' && (
         <p className="animate-[fade-in-up_0.2s_ease-out] text-red-600 dark:text-red-400">
-          Не удалось отправить, попробуйте ещё раз
+          {errorText}
         </p>
       )}
     </div>
