@@ -4,8 +4,9 @@ export type ContactPayload = {
   name: string;
   contact: string;
   serviceType: ServiceType;
-  // Свободное описание от посетителя (вариант «опишите подробнее» у manual_review).
-  auditAnswers?: { details: string };
+  // Либо свободное описание `{ details }` (manual_review и вариант «подробнее»), либо
+  // анкета аудита: пары `{ ключ: { question, answer } }`.
+  auditAnswers?: Record<string, unknown>;
   // КП, которое видел посетитель: снимком, только для исхода «quote».
   proposal?: Record<string, unknown>;
 };

@@ -149,8 +149,8 @@ describe('POST /api/v1/intake/contact (e2e)', () => {
     ['лишнее поле', { ...validBody, status: 'won' }],
     ['auditAnswers не объект', { ...validBody, auditAnswers: 'текст' }],
     [
-      'auditAnswers больше 10 КБ',
-      { ...validBody, auditAnswers: { details: 'x'.repeat(11 * 1024) } },
+      'auditAnswers больше 16 КБ',
+      { ...validBody, auditAnswers: { details: 'x'.repeat(17 * 1024) } },
     ],
     ['proposal не объект', { ...validBody, proposal: 'текст' }],
     [

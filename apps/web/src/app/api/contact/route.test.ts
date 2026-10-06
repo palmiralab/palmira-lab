@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AUDIT_QUESTIONS, CHAT_CONTEXT_QUESTION } from '@/lib/audit-questions';
 
 const sendContact = vi.hoisted(() => vi.fn());
 const checkRateLimit = vi.hoisted(() => vi.fn());
@@ -16,6 +17,8 @@ function post(body: unknown) {
     }),
   );
 }
+
+const questionText = (key: string) => AUDIT_QUESTIONS.find((q) => q.key === key)?.question;
 
 const valid = { name: ' Анна ', contact: ' @anna ', serviceType: 'telegram_automation' };
 
@@ -102,6 +105,87 @@ describe('POST /api/contact', () => {
 
     expect(response.status).toBe(400);
     expect(sendContact).not.toHaveBeenCalled();
+  });
+
+  describe('анкета аудита (auditForm)', () => {
+    const audit = { ...valid, serviceType: 'ai_consultation' };
+    const required = { businessDescription: ' Салон ', mainPainPoint: 'Запись вручную' };
+
+    it('собирает пары вопрос-ответ из нашего списка, лишние ключи отбрасывает', async () => {
+      await post({
+        ...audit,
+        auditForm: {
+          answers: {
+            ...required,
+            weeklyHours: '5–20 часов',
+            currentTools: ['Мессенджеры', 'Excel или Google Таблицы'],
+            status: 'won',
+          },
+        },
+      });
+
+      expect(sendContact.mock.calls[0][0].serviceType).toBe('ai_consultation');
+      expect(sendContact.mock.calls[0][0].auditAnswers).toEqual({
+        businessDescription: { question: questionText('businessDescription'), answer: 'Салон' },
+        mainPainPoint: { question: questionText('mainPainPoint'), answer: 'Запись вручную' },
+        weeklyHours: { question: questionText('weeklyHours'), answer: '5–20 часов' },
+        currentTools: {
+          question: questionText('currentTools'),
+          answer: ['Excel или Google Таблицы', 'Мессенджеры'],
+        },
+      });
+    });
+
+    it('реплики из чата идут последней парой', async () => {
+      await post({ ...audit, auditForm: { answers: required, chatContext: '  Нужен бот  ' } });
+
+      const answers = sendContact.mock.calls[0][0].auditAnswers;
+      expect(Object.keys(answers).at(-1)).toBe('chatDescription');
+      expect(answers.chatDescription).toEqual({ question: CHAT_CONTEXT_QUESTION, answer: 'Нужен бот' });
+    });
+
+    it('текст вопроса из запроса не принимаем: берём свой', async () => {
+      await post({
+        ...audit,
+        auditForm: { answers: { ...required, businessDescription: { question: 'подмена', answer: 'x' } } },
+      });
+
+      // объект вместо строки: ответ не принят, обязательный вопрос пуст
+      expect(sendContact).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['нет обязательных ответов', { answers: {} }],
+      ['только один из двух', { answers: { businessDescription: 'Салон' } }],
+      ['ответ из одних пробелов', { answers: { ...required, mainPainPoint: '   ' } }],
+      ['answers не объект', { answers: 'текст' }],
+      ['auditForm не объект', 'текст'],
+    ])('%s: 400, в API не ходим', async (_title, auditForm) => {
+      const response = await post({ ...audit, auditForm });
+
+      expect(response.status).toBe(400);
+      expect(sendContact).not.toHaveBeenCalled();
+    });
+
+    it('анкета побеждает старое описание details', async () => {
+      await post({ ...audit, auditAnswers: { details: 'старое' }, auditForm: { answers: required } });
+
+      expect(sendContact.mock.calls[0][0].auditAnswers).not.toHaveProperty('details');
+      expect(sendContact.mock.calls[0][0].auditAnswers).toHaveProperty('businessDescription');
+    });
+
+    it('у не-аудита анкету отбрасываем с записью в лог, заявка уходит', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const response = await post({ ...valid, auditForm: { answers: required } });
+
+      expect(response.status).toBe(200);
+      expect(sendContact.mock.calls[0][0].auditAnswers).toBeUndefined();
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toContain('telegram_automation');
+      expect(warn.mock.calls[0][0]).not.toContain('Салон');
+      warn.mockRestore();
+    });
   });
 
   it('слишком длинное описание: 400, в API не ходим', async () => {
