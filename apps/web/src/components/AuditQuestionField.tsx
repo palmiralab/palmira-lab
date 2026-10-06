@@ -13,12 +13,19 @@ type AuditQuestionFieldProps = {
   // быть нужного типа, поэтому unknown и проверка на месте.
   value: unknown;
   onChange: (value: unknown) => void;
+  // Ставить ли курсор в текстовое поле при появлении (у выбора из вариантов не нужно).
+  autoFocus?: boolean;
 };
 
 // Поле одного вопроса анкеты: текст, один вариант или несколько. Сама ничего не
 // хранит: значение приходит сверху, изменение уходит обратно через onChange
 // (в визарде это dispatch).
-export function AuditQuestionField({ question, value, onChange }: AuditQuestionFieldProps) {
+export function AuditQuestionField({
+  question,
+  value,
+  onChange,
+  autoFocus = false,
+}: AuditQuestionFieldProps) {
   if (question.type === 'text') {
     return (
       <TextArea
@@ -26,6 +33,7 @@ export function AuditQuestionField({ question, value, onChange }: AuditQuestionF
         onValueChange={onChange}
         maxLength={question.maxLength}
         showCounter
+        autoFocus={autoFocus}
         placeholder={question.placeholder}
         aria-label={question.question}
       />

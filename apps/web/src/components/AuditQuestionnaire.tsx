@@ -132,6 +132,7 @@ export function AuditQuestionnaire({
               key={question.key}
               question={question}
               value={state.answers[question.key]}
+              autoFocus={state.navigated}
               onChange={(value) => dispatch({ type: 'answer', key: question.key, value })}
             />
           </div>
@@ -187,6 +188,7 @@ export function AuditQuestionnaire({
             submitLabel="Отправить заявку"
             errorText={errorText}
             submitDisabled={!canSubmit(state)}
+            autoFocus
           />
         </>
       )}

@@ -14,6 +14,10 @@ export type WizardState = {
   answers: RawAnswers;
   name: string;
   contact: string;
+  // Человек уже переходил между шагами. От этого зависит автофокус: при первой
+  // загрузке поле не фокусируем (на телефоне клавиатура закрыла бы вводный текст),
+  // а после «Далее» и «Назад» фокус идёт в текстовое поле нового шага.
+  navigated: boolean;
 };
 
 export type WizardAction =
@@ -24,7 +28,7 @@ export type WizardAction =
   | { type: 'setContact'; value: string };
 
 export function initialWizardState(): WizardState {
-  return { step: 0, answers: {}, name: '', contact: '' };
+  return { step: 0, answers: {}, name: '', contact: '', navigated: false };
 }
 
 // Можно ли с текущего шага идти вперёд. Обязательный вопрос без ответа не
@@ -84,11 +88,11 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
       return { ...state, answers: { ...state.answers, [action.key]: action.value } };
     case 'next':
       return canGoNext(state)
-        ? { ...state, step: state.step + 1, answers: trimmedAnswers(state) }
+        ? { ...state, step: state.step + 1, answers: trimmedAnswers(state), navigated: true }
         : state;
     case 'back':
       return state.step > 0
-        ? { ...state, step: state.step - 1, answers: trimmedAnswers(state) }
+        ? { ...state, step: state.step - 1, answers: trimmedAnswers(state), navigated: true }
         : state;
     case 'setName':
       return { ...state, name: action.value };

@@ -18,6 +18,8 @@ type ContactFormProps = {
   submitLabel?: string;
   errorText?: string;
   submitDisabled?: boolean;
+  // Курсор в первое поле при появлении формы (на шаге контактов анкеты).
+  autoFocus?: boolean;
 };
 
 export function ContactForm({
@@ -33,6 +35,7 @@ export function ContactForm({
   submitLabel = 'Отправить контакт',
   errorText = 'Не удалось отправить, попробуйте ещё раз',
   submitDisabled = false,
+  autoFocus = false,
 }: ContactFormProps) {
   if (contactStatus === 'sent') {
     return (
@@ -52,6 +55,7 @@ export function ContactForm({
       <input
         value={contactName}
         onChange={(e) => onContactNameChange(e.target.value)}
+        autoFocus={autoFocus}
         placeholder="Имя"
         className={inputClass}
       />

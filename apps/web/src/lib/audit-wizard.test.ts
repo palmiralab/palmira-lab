@@ -28,6 +28,7 @@ describe('wizardReducer', () => {
       answers: {},
       name: '',
       contact: '',
+      navigated: false,
     });
   });
 
@@ -140,6 +141,40 @@ describe('wizardReducer', () => {
     });
   });
 
+  describe('navigated (для автофокуса)', () => {
+    it('до первого перехода false, ввод ответа его не меняет', () => {
+      const state = run([{ type: 'answer', key: 'businessDescription', value: 'Салон' }]);
+
+      expect(state.navigated).toBe(false);
+    });
+
+    it('после «Далее» true', () => {
+      const state = run([
+        { type: 'answer', key: 'businessDescription', value: 'Салон' },
+        { type: 'next' },
+      ]);
+
+      expect(state.navigated).toBe(true);
+    });
+
+    it('«Далее», заблокированное пустым ответом, не считается переходом', () => {
+      const state = run([{ type: 'next' }]);
+
+      expect(state.navigated).toBe(false);
+    });
+
+    it('после «Назад» остаётся true, в том числе на нулевом шаге', () => {
+      const state = run([
+        { type: 'answer', key: 'businessDescription', value: 'Салон' },
+        { type: 'next' },
+        { type: 'back' },
+      ]);
+
+      expect(state.step).toBe(0);
+      expect(state.navigated).toBe(true);
+    });
+  });
+
   it('имя и контакт сохраняются', () => {
     const state = run([
       { type: 'setName', value: 'Анна' },
@@ -156,6 +191,7 @@ describe('canSubmit', () => {
     answers: { businessDescription: 'Салон', mainPainPoint: 'Запись' },
     name: 'Анна',
     contact: '@anna',
+    navigated: true,
   };
 
   it('можно, когда обязательные вопросы, имя и контакт заполнены', () => {
