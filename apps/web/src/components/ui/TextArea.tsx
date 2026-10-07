@@ -11,6 +11,10 @@ type TextAreaProps = Omit<
   maxLength: number;
   // Счётчик «12 / 500» под полем. По умолчанию выключен.
   showCounter?: boolean;
+  // Ctrl+Enter или ⌘+Enter в поле. Обычный Enter остаётся переводом строки.
+  onModEnter?: () => void;
+  // Подсказка под полем слева (скрыта на узких экранах: там нет клавиатуры).
+  hint?: string;
 };
 
 // Начиная с этой доли лимита счётчик меняет цвет: человек видит, что место кончается.
@@ -23,10 +27,13 @@ export function TextArea({
   onValueChange,
   maxLength,
   showCounter = false,
+  onModEnter,
+  hint,
   rows = 4,
   ...rest
 }: TextAreaProps) {
   const counterId = useId();
+  const hintId = useId();
   const nearLimit = value.length >= maxLength * WARN_RATIO;
 
   return (
@@ -37,20 +44,39 @@ export function TextArea({
         onChange={(e) => onValueChange(e.target.value)}
         maxLength={maxLength}
         rows={rows}
-        // Счётчик читается при фокусе на поле, а не на каждый символ.
-        aria-describedby={showCounter ? counterId : undefined}
+        onKeyDown={(e) => {
+          if (onModEnter && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            onModEnter();
+          }
+        }}
+        // Счётчик и подсказка читаются при фокусе на поле, а не на каждый символ.
+        aria-describedby={
+          [showCounter && counterId, hint && hintId].filter(Boolean).join(' ') || undefined
+        }
         className={inputClass}
       />
-      {showCounter && (
-        <p
-          id={counterId}
-          data-near-limit={nearLimit}
-          className={`self-end text-xs ${
-            nearLimit ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'
-          }`}
-        >
-          {value.length} / {maxLength}
-        </p>
+      {(showCounter || hint) && (
+        <div className="flex items-start justify-between gap-3">
+          {hint ? (
+            <p id={hintId} className="hidden text-xs text-slate-500 dark:text-slate-400 sm:block">
+              {hint}
+            </p>
+          ) : (
+            <span />
+          )}
+          {showCounter && (
+            <p
+              id={counterId}
+              data-near-limit={nearLimit}
+              className={`text-xs ${
+                nearLimit ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {value.length} / {maxLength}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

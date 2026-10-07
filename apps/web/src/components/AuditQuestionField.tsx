@@ -15,6 +15,8 @@ type AuditQuestionFieldProps = {
   onChange: (value: unknown) => void;
   // Ставить ли курсор в текстовое поле при появлении (у выбора из вариантов не нужно).
   autoFocus?: boolean;
+  // Ctrl/⌘+Enter в текстовом поле: перейти дальше.
+  onModEnter?: () => void;
 };
 
 // Поле одного вопроса анкеты: текст, один вариант или несколько. Сама ничего не
@@ -25,6 +27,7 @@ export function AuditQuestionField({
   value,
   onChange,
   autoFocus = false,
+  onModEnter,
 }: AuditQuestionFieldProps) {
   if (question.type === 'text') {
     return (
@@ -34,6 +37,8 @@ export function AuditQuestionField({
         maxLength={question.maxLength}
         showCounter
         autoFocus={autoFocus}
+        onModEnter={onModEnter}
+        hint={onModEnter ? 'Ctrl/⌘ + Enter — дальше' : undefined}
         placeholder={question.placeholder}
         aria-label={question.question}
       />

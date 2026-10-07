@@ -138,6 +138,9 @@ export function AuditQuestionnaire({
               question={question}
               value={state.answers[question.key]}
               autoFocus={state.navigated}
+              // Если «Далее» заблокирована пустым обязательным ответом, reducer
+              // вернёт то же состояние, и ничего не произойдёт.
+              onModEnter={() => dispatch({ type: 'next' })}
               onChange={(value) => dispatch({ type: 'answer', key: question.key, value })}
             />
           </div>
