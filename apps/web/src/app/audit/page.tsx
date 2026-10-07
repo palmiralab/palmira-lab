@@ -10,8 +10,10 @@ export const metadata: Metadata = {
 
 // Страница-хозяин анкеты. Чата здесь нет, поэтому chatContext не передаём.
 export default function AuditPage() {
+  // Заголовок и анкета один блок, поэтому зазор между ними меньше общего gap-12 у
+  // SiteShell: тот отделяет друг от друга самостоятельные секции страницы.
   return (
-    <>
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
         <Link href="/" className="text-sm text-slate-600 hover:underline dark:text-slate-400">
           ← На главную
@@ -22,6 +24,6 @@ export default function AuditPage() {
       </div>
 
       <AuditQuestionnaire showHeading={false} />
-    </>
+    </div>
   );
 }

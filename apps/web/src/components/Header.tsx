@@ -25,9 +25,12 @@ export function Header({ isHome = false }: { isHome?: boolean }) {
         )}
         <ThemeToggle />
       </div>
-      <nav className="flex gap-4 text-sm text-slate-600 dark:text-slate-400">
+      <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-400">
         <Link href="/services" className="hover:underline">
           Услуги
+        </Link>
+        <Link href="/audit" className="hover:underline">
+          Бесплатный аудит
         </Link>
         <Link href="/#cases" className="hover:underline">
           Кейсы
