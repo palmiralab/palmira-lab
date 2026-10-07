@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { findService, serviceGroups } from '@/lib/content';
+import { primaryButtonClass } from '@/lib/ui-classes';
 
 export function generateStaticParams() {
   return serviceGroups.flatMap((group) => group.items.map((item) => ({ slug: item.slug })));
@@ -47,6 +48,14 @@ export default async function ServicePage(props: PageProps<'/services/[slug]'>) 
         <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{item.title}</h1>
         <p className="font-mono text-emerald-600 dark:text-emerald-400">{item.price}</p>
         <p className="text-slate-600 dark:text-slate-400">{detail?.summary ?? item.description}</p>
+        {item.primaryAction && (
+          <Link
+            href={item.primaryAction.href}
+            className={`${primaryButtonClass} self-start text-center`}
+          >
+            {item.primaryAction.label}
+          </Link>
+        )}
       </div>
 
       {detail && (
@@ -126,15 +135,23 @@ export default async function ServicePage(props: PageProps<'/services/[slug]'>) 
 
       <div className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <p className="text-slate-700 dark:text-slate-300">
-          Не уверены, подходит ли это вам? Начните с бесплатного ИИ-аудита: несколько
-          вопросов в чате, и вы получите страницу с разбором.
+          {slug === 'ai-audit'
+            ? 'Ответьте на несколько вопросов о вашем бизнесе, и вы получите страницу с разбором. Бесплатно и без обязательств.'
+            : 'Не уверены, подходит ли это вам? Начните с бесплатного ИИ-аудита: несколько вопросов о вашем бизнесе, и вы получите страницу с разбором.'}
         </p>
-        <Link
-          href="/services/ai-audit"
-          className="mt-3 inline-block text-emerald-700 underline dark:text-emerald-400"
-        >
-          Про бесплатный ИИ-аудит →
-        </Link>
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+          <Link href="/audit" className="text-emerald-700 underline dark:text-emerald-400">
+            Заказать бесплатный ИИ-аудит →
+          </Link>
+          {slug !== 'ai-audit' && (
+            <Link
+              href="/services/ai-audit"
+              className="text-slate-600 underline dark:text-slate-400"
+            >
+              Подробнее про аудит
+            </Link>
+          )}
+        </div>
       </div>
     </>
   );

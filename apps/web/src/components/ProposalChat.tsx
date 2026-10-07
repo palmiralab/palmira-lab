@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import type { Proposal } from '@/lib/ai-provider/provider';
 import { TypingIndicator } from '@/components/TypingIndicator';
@@ -338,6 +339,13 @@ export function ProposalChat() {
                     {starter.label}
                   </button>
                 ))}
+                {/* Явный вход в анкету аудита: ссылка, а не угадывание по тексту запроса. */}
+                <Link
+                  href="/audit"
+                  className="rounded-full border border-emerald-600 px-3 py-1 text-sm text-emerald-700 hover:bg-emerald-50 dark:border-emerald-400 dark:text-emerald-300 dark:hover:bg-emerald-950"
+                >
+                  Заказать бесплатный ИИ-аудит →
+                </Link>
               </div>
             </div>
           )}
