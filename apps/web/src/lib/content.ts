@@ -39,7 +39,6 @@ export const cases: Case[] = [
     result:
       'Работающий адаптивный сайт на прежнем домене, более 80 материалов ' +
       'в Markdown, правки через Git, выкладка при каждом пуше.',
-    link: { href: '/cases/klinika-zdorovya', label: 'Читать кейс →' },
     detail: {
       title: 'Сайт клиники: вместо восстановления CMS — сайт на Markdown и Git',
       situation:
