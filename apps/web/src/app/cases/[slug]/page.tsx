@@ -90,6 +90,23 @@ export default async function CasePage(props: PageProps<'/cases/[slug]'>) {
               )}
             </div>
           )}
+          {detail.related && detail.related.length > 0 && (
+            <Section title="Связанные кейсы">
+              <ul className={listClass}>
+                {detail.related.map((relatedSlug) => {
+                  const related = findCase(relatedSlug);
+                  if (!related) return null;
+                  return (
+                    <li key={relatedSlug}>
+                      <Link href={`/cases/${relatedSlug}`} className={linkClass}>
+                        {related.tag}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Section>
+          )}
         </>
       ) : (
         <>
