@@ -3,7 +3,7 @@ import { cases } from '@/lib/content';
 import { CaseCard } from '@/components/CaseCard';
 
 // На главной показываем первые кейсы, остальные на странице /cases.
-const HOME_CASES_COUNT = 3;
+const HOME_CASES_COUNT = 4;
 
 export function Cases() {
   return (
