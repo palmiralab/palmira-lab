@@ -10,6 +10,20 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* Еле заметная зелёная подсветка в верхней части страницы: от верхнего края
+   плавно уходит в фон примерно к середине экрана. Цвет фона задан классами на
+   <body> (layout.tsx), здесь только слой-картинка поверх него. Не повторяется и не
+   растягивается по высоте страницы, поэтому при прокрутке уезжает вместе с шапкой. */
+body {
+  background-image: linear-gradient(to bottom, rgb(110 231 183 / 0.10), rgb(110 231 183 / 0));
+  background-repeat: no-repeat;
+  background-size: 100% 55vh;
+}
+
+.dark body {
+  background-image: linear-gradient(to bottom, rgb(16 185 129 / 0.07), rgb(16 185 129 / 0));
+}
+
 /* Плавное раскрытие <details>. Всё внутри @supports: браузеры без
    ::details-content пропускают блок целиком и раскрывают мгновенно, как раньше. */
 @supports selector(::details-content) {
