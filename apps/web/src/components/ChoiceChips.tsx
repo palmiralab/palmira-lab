@@ -11,7 +11,7 @@ export function ChoiceChips<T extends string>({
   onChange,
 }: {
   label: string;
-  options: Option<T>[];
+  options: readonly Option<T>[];
   value: T;
   onChange: (value: T) => void;
 }) {
