@@ -5,7 +5,7 @@ import type { SandboxTemplate } from '@/lib/sandbox-store';
 
 type CreateResult = { url: string; expiresAt: number };
 
-export default function SandboxFormPage() {
+export function QuickNotesForm() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [template, setTemplate] = useState<SandboxTemplate>('note');
@@ -21,7 +21,7 @@ export default function SandboxFormPage() {
     setResult(null);
 
     try {
-      const response = await fetch('/api/sandbox', {
+      const response = await fetch('/api/demo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, body, template }),
@@ -44,19 +44,6 @@ export default function SandboxFormPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-        Песочница: страничка по шаблону
-      </h1>
-      <p className="mt-2 text-slate-600 dark:text-slate-400">
-        Введите заголовок и текст, выберите шаблон, и мы соберём из них отдельную
-        страничку с готовой ссылкой, которой можно поделиться. Ссылка живёт 5 минут.
-      </p>
-      <p className="mt-2 text-slate-600 dark:text-slate-400">
-        Это не сайт целиком, а демонстрация автоматической сборки: так же страницы
-        собираются и для ваших задач. В работе дизайн и тип страницы могут быть любыми, по
-        согласованию.
-      </p>
-
       <div className="mt-6 space-y-4">
         <input
           type="text"
@@ -99,7 +86,12 @@ export default function SandboxFormPage() {
       {result && (
         <p className="mt-4 text-slate-700 dark:text-slate-300">
           Готово:{' '}
-          <a className="text-emerald-700 underline dark:text-emerald-400" href={result.url}>
+          <a
+            className="text-emerald-700 underline dark:text-emerald-400"
+            href={result.url}
+            target="_blank"
+            rel="noreferrer"
+          >
             {result.url}
           </a>{' '}
           — доступна до {new Date(result.expiresAt).toLocaleTimeString('ru-RU')}.

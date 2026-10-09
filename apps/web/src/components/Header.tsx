@@ -30,7 +30,7 @@ export function Header({ isHome = false }: { isHome?: boolean }) {
         <NavLink href="/services">Услуги</NavLink>
         <NavLink href="/audit">Бесплатный аудит</NavLink>
         <NavLink href="/cases">Кейсы</NavLink>
-        <NavLink href="/sandbox">Песочница</NavLink>
+        <NavLink href="/demo">Демо</NavLink>
       </nav>
     </div>
   );

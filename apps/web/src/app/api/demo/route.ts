@@ -10,7 +10,7 @@ function isSandboxTemplate(value: unknown): value is SandboxTemplate {
 }
 
 export async function POST(request: Request) {
-  const { rateLimited } = checkRateLimit(request, 'sandbox');
+  const { rateLimited } = checkRateLimit(request, 'demo', 10);
   if (rateLimited) {
     return Response.json({ error: 'Слишком много запросов, попробуйте позже' }, { status: 429 });
   }
@@ -36,5 +36,5 @@ export async function POST(request: Request) {
   }
 
   const { id, expiresAt } = createSandboxPage({ title, body: text, template });
-  return Response.json({ id, url: `/sandbox/${id}`, expiresAt });
+  return Response.json({ id, url: `/demo/quick-notes/${id}`, expiresAt });
 }

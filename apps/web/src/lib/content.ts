@@ -290,6 +290,28 @@ export const cases: Case[] = [
   },
 ];
 
+// Демо: живые мини-версии того, что студия делает для клиентов. Каждое демо
+// живёт на своей странице /demo/<slug>; в списке /demo показывается карточка.
+export type Demo = {
+  slug: string;
+  title: string;
+  description: string;
+};
+
+export const demos: Demo[] = [
+  {
+    slug: 'quick-notes',
+    title: 'Быстрые заметки в вашем дизайне',
+    description:
+      'Напишите заголовок и пару строк, выберите оформление и получите страницу ' +
+      'со своей ссылкой, которой можно сразу поделиться.',
+  },
+];
+
+export function findDemo(slug: string): Demo | undefined {
+  return demos.find((item) => item.slug === slug);
+}
+
 export type ServiceTier = {
   name: string;
   price: string;
@@ -492,7 +514,7 @@ export const serviceGroups: ServiceGroup[] = [
         description:
           'Публикуем с SSL и реальным доменом, исходники передаём вам.',
         price: 'от 10 000 ₽',
-        demo: { href: '/sandbox', label: 'Попробуйте сами: страничка по шаблону' },
+        demo: { href: '/demo/quick-notes', label: 'Попробуйте сами: страничка по шаблону' },
       },
       {
         slug: 'landing-page',
@@ -519,12 +541,12 @@ export const serviceGroups: ServiceGroup[] = [
           pricingNote:
             'Цена зависит от объёма текстов, числа блоков и интеграций. Точную цену называем после разбора задачи.',
           example:
-            'Автоматическую сборку страничек по шаблону можно попробовать в песочнице.',
+            'Автоматическую сборку страничек по шаблону можно попробовать в демо.',
         },
         title: 'Лендинг с формой заявки',
         description: 'Страница под одну услугу или продукт, заявки приходят в Telegram.',
         price: 'от 10 000 ₽',
-        demo: { href: '/sandbox', label: 'Попробуйте сами: страничка по шаблону' },
+        demo: { href: '/demo/quick-notes', label: 'Попробуйте сами: страничка по шаблону' },
       },
     ],
   },

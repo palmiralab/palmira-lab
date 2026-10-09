@@ -41,7 +41,7 @@ function getClientIp(request: Request): string {
   return 'unknown';
 }
 
-// Счётчики раздельные по `scope` (имя маршрута): чат, контакт и песочница
+// Счётчики раздельные по `scope` (имя маршрута): чат, контакт и демо
 // не делят одну квоту. Лимит `max` у каждого маршрута свой.
 export function checkRateLimit(
   request: Request,
