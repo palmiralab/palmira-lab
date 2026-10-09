@@ -28,7 +28,8 @@ const INITIAL_STATE: FormState = {
 
 const DESIGN_OPTIONS: { value: LandingDesign; label: string }[] = [
   { value: 'light', label: 'Светлая' },
-  { value: 'bold', label: 'Яркая' },
+  { value: 'bright', label: 'Яркая' },
+  { value: 'dark', label: 'Тёмная' },
 ];
 
 export function BusinessCardForm() {

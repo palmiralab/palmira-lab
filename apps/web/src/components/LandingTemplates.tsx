@@ -15,19 +15,29 @@ function contacts(data: LandingPageData): { label: string; value: string }[] {
   ].filter((item) => item.value);
 }
 
+// «Светлая»: тёплый светлый фон, заголовок с засечками, мягкие карточки
+// контактов с цветными точками.
 function LightLanding({ data }: LandingProps) {
   const items = contacts(data);
   return (
-    <main className="min-h-screen bg-white text-slate-900">
+    <main className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-emerald-50 text-slate-900">
       <div className="mx-auto max-w-2xl px-6 py-20">
-        <h1 className="text-4xl font-semibold tracking-tight">{data.name}</h1>
-        <p className="mt-4 text-lg leading-relaxed text-slate-600">{data.description}</p>
+        <p className="text-sm font-medium uppercase tracking-widest text-emerald-700">Добро пожаловать</p>
+        <h1 className="mt-3 font-serif text-5xl font-semibold leading-tight">{data.name}</h1>
+        <div className="mt-5 h-1 w-20 rounded bg-emerald-500" />
+        <p className="mt-6 text-lg leading-relaxed text-slate-600">{data.description}</p>
         {items.length > 0 && (
-          <dl className="mt-10 space-y-3 border-t border-slate-200 pt-6">
+          <dl className="mt-10 space-y-3">
             {items.map((item) => (
-              <div key={item.label} className="flex gap-4">
-                <dt className="w-24 shrink-0 text-sm text-slate-500">{item.label}</dt>
-                <dd className="text-slate-800">{item.value}</dd>
+              <div
+                key={item.label}
+                className="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-white/80 p-4 shadow-sm"
+              >
+                <span aria-hidden="true" className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
+                <div>
+                  <dt className="text-xs uppercase tracking-widest text-slate-500">{item.label}</dt>
+                  <dd className="mt-0.5 text-slate-800">{item.value}</dd>
+                </div>
               </div>
             ))}
           </dl>
@@ -38,7 +48,33 @@ function LightLanding({ data }: LandingProps) {
   );
 }
 
-function BoldLanding({ data }: LandingProps) {
+// «Яркая»: цветной градиентный фон, крупный белый заголовок, белая карточка
+// с контактами.
+function BrightLanding({ data }: LandingProps) {
+  const items = contacts(data);
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-fuchsia-600 via-rose-500 to-orange-400 text-white">
+      <div className="mx-auto max-w-2xl px-6 py-20">
+        <h1 className="text-5xl font-extrabold leading-tight tracking-tight sm:text-6xl">{data.name}</h1>
+        <p className="mt-5 text-xl leading-relaxed text-white/90">{data.description}</p>
+        {items.length > 0 && (
+          <dl className="mt-10 space-y-4 rounded-3xl bg-white p-6 text-slate-900 shadow-2xl">
+            {items.map((item) => (
+              <div key={item.label}>
+                <dt className="text-xs font-semibold uppercase tracking-widest text-fuchsia-600">{item.label}</dt>
+                <dd className="mt-0.5 text-lg">{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+        <DemoFooter className="mt-16 text-white/70" linkClassName="text-white" />
+      </div>
+    </main>
+  );
+}
+
+// «Тёмная»: тёмный фон, зелёно-бирюзовая полоска, контакты карточками.
+function DarkLanding({ data }: LandingProps) {
   const items = contacts(data);
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -75,7 +111,8 @@ function DemoFooter({ className, linkClassName }: { className: string; linkClass
 
 const designs: Record<LandingDesign, (props: LandingProps) => React.ReactElement> = {
   light: LightLanding,
-  bold: BoldLanding,
+  bright: BrightLanding,
+  dark: DarkLanding,
 };
 
 export function LandingRenderer({ data }: LandingProps) {

@@ -10,7 +10,7 @@ export const LANDING_LIMITS = {
   address: 120,
 } as const;
 
-const DESIGNS: LandingDesign[] = ['light', 'bold'];
+const DESIGNS: LandingDesign[] = ['light', 'bright', 'dark'];
 
 export type LandingParseResult =
   | { ok: true; data: LandingPageData }

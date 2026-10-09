@@ -22,7 +22,7 @@ describe('parseLandingInput', () => {
   });
 
   it('контакты необязательны', () => {
-    const result = parseLandingInput({ name: 'Утро', description: 'Кофе', design: 'bold' });
+    const result = parseLandingInput({ name: 'Утро', description: 'Кофе', design: 'bright' });
     expect(result.ok && result.data.phone).toBe('');
   });
 

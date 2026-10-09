@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 
 export type SandboxTemplate = 'note' | 'announcement' | 'fact';
 
-export type LandingDesign = 'light' | 'bold';
+export type LandingDesign = 'light' | 'bright' | 'dark';
 
 // Страницы демо бывают двух видов, различаются полем kind: заметка из
 // «Быстрых заметок» и визитка из демо «Визитка по описанию». По kind
