@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { NavLink } from '@/components/NavLink';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LabIcon } from '@/components/icons/LabIcon';
 
@@ -26,18 +27,10 @@ export function Header({ isHome = false }: { isHome?: boolean }) {
         <ThemeToggle />
       </div>
       <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-400">
-        <Link href="/services" className="hover:underline">
-          Услуги
-        </Link>
-        <Link href="/audit" className="hover:underline">
-          Бесплатный аудит
-        </Link>
-        <Link href="/cases" className="hover:underline">
-          Кейсы
-        </Link>
-        <Link href="/sandbox" className="hover:underline">
-          Песочница
-        </Link>
+        <NavLink href="/services">Услуги</NavLink>
+        <NavLink href="/audit">Бесплатный аудит</NavLink>
+        <NavLink href="/cases">Кейсы</NavLink>
+        <NavLink href="/sandbox">Песочница</NavLink>
       </nav>
     </div>
   );
