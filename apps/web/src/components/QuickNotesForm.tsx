@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ChoiceChips } from '@/components/ChoiceChips';
 import type { SandboxTemplate } from '@/lib/sandbox-store';
 
 type CreateResult = { url: string; expiresAt: number };
@@ -65,24 +66,12 @@ export function QuickNotesForm() {
           rows={5}
           className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-emerald-400"
         />
-        <div role="radiogroup" aria-label="Оформление" className="flex flex-wrap gap-2">
-          {TEMPLATE_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={template === option.value}
-              onClick={() => setTemplate(option.value)}
-              className={`cursor-pointer rounded-full border px-3 py-1 text-sm ${
-                template === option.value
-                  ? 'border-emerald-600 bg-emerald-50 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-300'
-                  : 'border-slate-300 text-slate-700 hover:border-emerald-600 dark:border-slate-700 dark:text-slate-300 dark:hover:border-emerald-400'
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        <ChoiceChips
+          label="Оформление"
+          options={TEMPLATE_OPTIONS}
+          value={template}
+          onChange={setTemplate}
+        />
         <button
           onClick={handleSubmit}
           disabled={loading}
