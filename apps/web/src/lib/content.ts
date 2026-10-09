@@ -509,7 +509,7 @@ export const serviceGroups: ServiceGroup[] = [
         title: 'CI/CD и автодеплой',
         description: 'Опубликовали изменение, и сайт обновился сам.',
         price: 'от 15 000 ₽',
-        demo: { href: '/#cases', label: 'Кейс «Деплой»' },
+        demo: { href: '/cases/deploy', label: 'Кейс «Деплой»' },
       },
       {
         slug: 'server-infra',
@@ -566,7 +566,7 @@ export const serviceGroups: ServiceGroup[] = [
         description:
           'Настраиваем сервер под ваш сервис: он работает постоянно, сам поднимается после сбоя, защищён и копирует важное.',
         price: 'от 15 000 ₽',
-        demo: { href: '/#cases', label: 'Кейс «Настройка VPS»' },
+        demo: { href: '/cases/vps-setup', label: 'Кейс «Настройка VPS»' },
       },
       {
         slug: 'support',

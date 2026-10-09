@@ -32,7 +32,7 @@ export function Header({ isHome = false }: { isHome?: boolean }) {
         <Link href="/audit" className="hover:underline">
           Бесплатный аудит
         </Link>
-        <Link href="/#cases" className="hover:underline">
+        <Link href="/cases" className="hover:underline">
           Кейсы
         </Link>
         <Link href="/sandbox" className="hover:underline">
