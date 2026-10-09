@@ -58,7 +58,7 @@ export default async function DemoPage(props: PageProps<'/demo/[slug]'>) {
 
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-          Зачем это вашему делу
+          Чем это полезно бизнесу
         </h2>
         <p className="text-slate-600 dark:text-slate-400">
           Это уменьшенная версия того, что мы делаем для клиентов: быстрые заметки, объявления и
