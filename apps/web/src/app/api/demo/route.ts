@@ -35,6 +35,6 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Неизвестный шаблон' }, { status: 400 });
   }
 
-  const { id, expiresAt } = createSandboxPage({ title, body: text, template });
+  const { id, expiresAt } = createSandboxPage({ kind: 'note', title, body: text, template });
   return Response.json({ id, url: `/demo/quick-notes/${id}`, expiresAt });
 }

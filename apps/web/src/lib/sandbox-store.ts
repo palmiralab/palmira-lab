@@ -2,12 +2,31 @@ import { randomUUID } from 'crypto';
 
 export type SandboxTemplate = 'note' | 'announcement' | 'fact';
 
-export type SandboxPage = {
+export type LandingDesign = 'light' | 'bold';
+
+// Страницы демо бывают двух видов, различаются полем kind: заметка из
+// «Быстрых заметок» и визитка из демо «Визитка по описанию». По kind
+// TypeScript понимает, какие поля есть у записи.
+export type NotePageData = {
+  kind: 'note';
   title: string;
   body: string;
   template: SandboxTemplate;
-  expiresAt: number;
 };
+
+export type LandingPageData = {
+  kind: 'landing';
+  name: string;
+  description: string;
+  phone: string;
+  email: string;
+  address: string;
+  design: LandingDesign;
+};
+
+export type DemoPageData = NotePageData | LandingPageData;
+
+export type SandboxPage = DemoPageData & { expiresAt: number };
 
 const TTL_MS = 5 * 60_000;
 const CLEANUP_INTERVAL_MS = 60_000;
@@ -45,7 +64,7 @@ if (!globalForSandbox.__sandboxCleanupStarted) {
   }, CLEANUP_INTERVAL_MS).unref();
 }
 
-export function createSandboxPage(data: { title: string; body: string; template: SandboxTemplate }): {
+export function createSandboxPage(data: DemoPageData): {
   id: string;
   expiresAt: number;
 } {

@@ -7,7 +7,7 @@ export default async function SandboxPage(props: PageProps<'/demo/[slug]/[id]'>)
   const { slug, id } = await props.params;
   const page = findDemo(slug) ? getSandboxPage(id) : undefined;
 
-  if (!page) {
+  if (!page || page.kind !== 'note') {
     notFound();
   }
 
