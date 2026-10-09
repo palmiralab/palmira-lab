@@ -11,7 +11,11 @@ import {
 } from '@/lib/routine-calc';
 import { inputClass } from '@/lib/ui-classes';
 
-const labelClass = 'flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-400';
+// h-full и justify-between: ячейка растягивается на высоту ряда сетки, подпись остаётся
+// сверху, а поле прижато вниз, поэтому поля в одном ряду стоят на одной линии,
+// даже если подписи разной длины.
+const labelClass =
+  'flex h-full flex-col justify-between gap-1 text-sm text-slate-600 dark:text-slate-400';
 
 function Field({
   label,
@@ -62,7 +66,7 @@ export function RoutineCalculatorForm() {
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
-          label="Сколько часов в неделю уходит на рутину (на одного человека)"
+          label="Часов рутины в неделю (на одного человека)"
           value={hours}
           onChange={setHours}
           placeholder="например, 5"
@@ -74,13 +78,13 @@ export function RoutineCalculatorForm() {
           placeholder="например, 2"
         />
         <Field
-          label="Сколько стоит час работы, ₽ (необязательно)"
+          label="Стоимость часа, ₽ (необязательно)"
           value={cost}
           onChange={setCost}
           placeholder="например, 1000"
         />
         <Field
-          label="Какую часть, по вашей оценке, можно автоматизировать, % (необязательно)"
+          label="Какую часть можно автоматизировать, % (по вашей оценке, необязательно)"
           value={percent}
           onChange={setPercent}
           placeholder="например, 50"
@@ -89,11 +93,14 @@ export function RoutineCalculatorForm() {
 
       <div
         aria-live="polite"
-        className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"
+        className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900 dark:bg-emerald-950/40"
       >
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
+          Результат
+        </p>
         {result ? (
           <div className="space-y-3">
-            <p className="text-sm text-slate-500">За год рутина занимает:</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">За год рутина занимает:</p>
             <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
               {formatHours(result.hoursPerYear)}
             </p>
@@ -116,7 +123,7 @@ export function RoutineCalculatorForm() {
             </p>
           </div>
         ) : (
-          <p className="text-slate-500">
+          <p className="text-slate-600 dark:text-slate-400">
             Введите, сколько часов в неделю уходит на рутину, и мы посчитаем, сколько это за год.
           </p>
         )}

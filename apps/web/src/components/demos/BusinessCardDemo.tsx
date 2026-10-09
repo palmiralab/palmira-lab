@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import { BusinessCardForm } from '@/components/BusinessCardForm';
+import { primaryButtonClass } from '@/lib/ui-classes';
 
 // Тело демо «Визитка по описанию»: объяснение, форма и пояснение, чем это полезно
 // бизнесу. Заголовок и вводный абзац страницы берутся из данных (lib/content.ts).
@@ -36,6 +38,9 @@ export function BusinessCardDemo() {
           В работе структура, дизайн и содержание подбираются под вас, по согласованию: от
           визитки на один экран до сайта из нескольких разделов.
         </p>
+        <Link href="/" className={`${primaryButtonClass} mt-2 self-start text-center`}>
+          Заказать такую страницу
+        </Link>
       </section>
     </>
   );

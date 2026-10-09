@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import { BusinessCardDemo } from '@/components/demos/BusinessCardDemo';
+import { RoutineCalculatorDemo } from '@/components/demos/RoutineCalculatorDemo';
 import { QuickNotesDemo } from '@/components/demos/QuickNotesDemo';
 
 // Тело каждого демо по его slug (slug задаётся в lib/content.ts, demos).
@@ -7,4 +8,5 @@ import { QuickNotesDemo } from '@/components/demos/QuickNotesDemo';
 export const demoBodies: Record<string, ComponentType> = {
   'quick-notes': QuickNotesDemo,
   'business-card': BusinessCardDemo,
+  'routine-calculator': RoutineCalculatorDemo,
 };
