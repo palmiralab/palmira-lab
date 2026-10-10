@@ -100,11 +100,15 @@ export function ProposalChat() {
   // можно сразу отправить ещё раз — 'error'), иначе набранное на автомате
   // проскакивает мимо. Пока поле disabled ('waiting_reply') — фокусить
   // некуда, браузер всё равно не даст.
+  // Только когда диалог уже начался: на загрузке страницы (и после «Начать
+  // заново») фокус не нужен, на телефоне он сразу открывает клавиатуру,
+  // которая закрывает половину экрана.
+  const hasMessages = messages.length > 0;
   useEffect(() => {
-    if (state === 'idle' || state === 'error') {
+    if (hasMessages && (state === 'idle' || state === 'error')) {
       draftInputRef.current?.focus();
     }
-  }, [state]);
+  }, [state, hasMessages]);
 
   function applyStarter(text: string) {
     setDraft(text);
@@ -274,7 +278,7 @@ export function ProposalChat() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-900">
       {messages.length === 0 && (
         <div className="flex flex-col gap-2">
           <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
@@ -293,8 +297,8 @@ export function ProposalChat() {
               key={i}
               className={
                 m.role === 'user'
-                  ? 'self-end rounded-lg bg-emerald-600 px-3 py-2 text-white dark:bg-emerald-400 dark:text-slate-950'
-                  : 'self-start rounded-lg bg-slate-100 px-3 py-2 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
+                  ? 'motion-safe:animate-[fade-in-up_0.3s_ease-out] self-end rounded-lg bg-emerald-600 px-3 py-2 text-white dark:bg-emerald-400 dark:text-slate-950'
+                  : 'motion-safe:animate-[fade-in-up_0.3s_ease-out] self-start rounded-lg bg-slate-100 px-3 py-2 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
               }
             >
               {m.content}
@@ -314,6 +318,12 @@ export function ProposalChat() {
             placeholder={messages.length === 0 ? (startPlaceholder ?? '') : 'Ваш ответ'}
             rows={3}
             disabled={state === 'waiting_reply'}
+            // iOS не всегда сам подкручивает поле над экранной клавиатурой;
+            // клавиатура открывается с задержкой, поэтому ждём её.
+            onFocus={(e) => {
+              const field = e.currentTarget;
+              setTimeout(() => field.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+            }}
             className={inputClass}
           />
           <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
