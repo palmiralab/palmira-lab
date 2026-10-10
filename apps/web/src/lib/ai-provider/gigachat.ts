@@ -53,8 +53,18 @@ export async function getAccessToken(): Promise<string> {
 type GigaChatCompletionsResponse = {
   choices: Array<{
     message: { content: string };
+    finish_reason?: string;
   }>;
 };
+
+// GigaChat сам фильтрует темы (стоп-лист) и вместо ответа отдаёт фиксированную
+// заглушку «Как и любая языковая модель, GigaChat не обладает собственным
+// мнением…» с finish_reason "blacklist". Это не вопрос по делу и не сбой формата,
+// поэтому посетителю такой текст не показываем (см. classifyAndDraft).
+const CONTENT_FILTER_FINISH_REASON = 'blacklist';
+
+const CONTENT_FILTERED_REPLY =
+  'С этой темой мы помочь не сможем. Опишите другую задачу (сайт, бот, автоматизацию рутины) или переформулируйте запрос.';
 
 // ============================================================================
 // Активная реализация (с 26.09) — обычный текстовый ответ, без response_format.
@@ -74,7 +84,7 @@ const MAX_VALIDATION_ATTEMPTS = 3;
 
 async function requestCompletionContent(
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
-): Promise<string> {
+): Promise<{ content: string; filtered: boolean }> {
   const accessToken = await getAccessToken();
 
   const controller = new AbortController();
@@ -110,7 +120,10 @@ async function requestCompletionContent(
     throw new Error('GigaChat response missing message content');
   }
 
-  return rawContent;
+  return {
+    content: rawContent,
+    filtered: data.choices?.[0]?.finish_reason === CONTENT_FILTER_FINISH_REASON,
+  };
 }
 
 // Модель без response_format иногда оборачивает JSON в markdown-код-блок
@@ -134,7 +147,12 @@ export const gigaChatProvider: ProposalGenerationProvider = {
     let lastError: unknown;
     let lastNonEmptyContent = '';
     for (let attempt = 1; attempt <= MAX_VALIDATION_ATTEMPTS; attempt++) {
-      const rawContent = await requestCompletionContent(requestMessages);
+      const { content: rawContent, filtered } = await requestCompletionContent(requestMessages);
+      // Тема отсеяна фильтром GigaChat: повторы дадут ту же заглушку, поэтому
+      // отвечаем сразу и своими словами.
+      if (filtered) {
+        return { type: 'question', text: CONTENT_FILTERED_REPLY };
+      }
       if (rawContent.trim()) {
         lastNonEmptyContent = rawContent.trim();
       }
