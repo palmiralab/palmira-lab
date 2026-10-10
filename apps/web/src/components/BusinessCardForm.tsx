@@ -126,6 +126,9 @@ export function BusinessCardForm() {
       <button onClick={handleSubmit} disabled={loading} className={primaryButtonClass}>
         {loading ? 'Собираю...' : 'Собрать страницу'}
       </button>
+      <p className="text-xs text-slate-500">
+        Введённый текст хранится на сервере 5 минут, затем удаляется. Не вводите личные данные.
+      </p>
 
       {error && (
         <p className="animate-[fade-in-up_0.2s_ease-out] text-red-600 dark:text-red-400">{error}</p>

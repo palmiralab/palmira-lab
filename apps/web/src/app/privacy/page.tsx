@@ -105,6 +105,15 @@ export default function PrivacyPage() {
       </section>
 
       <section className="flex flex-col gap-3">
+        <h2 className={headingClass}>Демо-страницы</h2>
+        <p className={textClass}>
+          Текст, который вы вводите в демо «Быстрые заметки» и «Визитка», хранится в оперативной
+          памяти сервера 5 минут, чтобы показать вам собранную страницу, и затем удаляется. В базу
+          данных он не попадает и третьим лицам не передаётся. Не вводите в демо личные данные.
+        </p>
+      </section>
+
+      <section className="flex flex-col gap-3">
         <h2 className={headingClass}>Ваши права</h2>
         <p className={textClass}>
           Вы можете узнать, какие данные о вас у нас есть, попросить исправить или удалить их и

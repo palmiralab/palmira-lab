@@ -79,6 +79,9 @@ export function QuickNotesForm() {
         >
           {loading ? 'Собираю...' : 'Собрать страницу'}
         </button>
+        <p className="text-xs text-slate-500">
+          Введённый текст хранится на сервере 5 минут, затем удаляется. Не вводите личные данные.
+        </p>
       </div>
 
       {error && (
