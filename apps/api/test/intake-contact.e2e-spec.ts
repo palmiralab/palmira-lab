@@ -42,7 +42,9 @@ describe('POST /api/v1/intake/contact (e2e)', () => {
   };
 
   const countTestLeads = () =>
-    prisma.lead.count({ where: { contact: { startsWith: MARK } } });
+    prisma.lead.count({
+      where: { contact: { startsWith: MARK, mode: 'insensitive' } },
+    });
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -69,8 +71,9 @@ describe('POST /api/v1/intake/contact (e2e)', () => {
         where: { id: { in: conversationIds } },
       });
     } finally {
+      // insensitive: тесты повторов шлют тот же контакт в другом регистре.
       await prisma.lead.deleteMany({
-        where: { contact: { startsWith: MARK } },
+        where: { contact: { startsWith: MARK, mode: 'insensitive' } },
       });
       conversationIds.length = 0;
     }
@@ -96,6 +99,33 @@ describe('POST /api/v1/intake/contact (e2e)', () => {
       status: 'new',
       auditAnswers: null,
     });
+  });
+
+  it('один контакт можно оставить 3 раза, четвёртая заявка лида не создаёт и не уведомляет', async () => {
+    const variants = [
+      validBody.contact,
+      validBody.contact.toUpperCase(),
+      ` ${validBody.contact} `,
+    ];
+    const ids: string[] = [];
+    for (const contact of variants) {
+      const res = await post({ ...validBody, contact }).expect(201);
+      ids.push(res.body.leadId);
+    }
+    expect(new Set(ids).size).toBe(3);
+
+    const fourth = await post(validBody).expect(201);
+
+    expect(ids).toContain(fourth.body.leadId);
+    expect(await countTestLeads()).toBe(3);
+    expect(notifier.notifyNewLead).toHaveBeenCalledTimes(3);
+  });
+
+  it('тот же контакт с другим типом услуги: отдельная заявка', async () => {
+    await post(validBody).expect(201);
+    await post({ ...validBody, serviceType: 'ai_consultation' }).expect(201);
+
+    expect(await countTestLeads()).toBe(2);
   });
 
   it('сохраняет ответы анкеты аудита', async () => {
