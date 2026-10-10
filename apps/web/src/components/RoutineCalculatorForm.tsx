@@ -6,6 +6,7 @@ import { formatHours, formatRub, formatWorkDays } from '@/lib/format-ru';
 import { parseAmount } from '@/lib/parse-amount';
 import {
   calcRoutine,
+  findInputProblem,
   WORK_HOURS_PER_DAY,
   WORK_WEEKS_PER_YEAR,
 } from '@/lib/routine-calc';
@@ -55,12 +56,14 @@ export function RoutineCalculatorForm() {
   const [percent, setPercent] = useState('');
 
   const hourlyCost = parseAmount(cost);
-  const result = calcRoutine({
+  const input = {
     hoursPerWeek: parseAmount(hours),
     people: parseAmount(people),
     hourlyCost,
     automatablePercent: percent.trim() === '' ? null : parseAmount(percent),
-  });
+  };
+  const result = calcRoutine(input);
+  const problem = findInputProblem(input);
 
   return (
     <div className="space-y-4">
@@ -122,6 +125,8 @@ export function RoutineCalculatorForm() {
               вы называете сами.
             </p>
           </div>
+        ) : problem ? (
+          <p className="text-red-600 dark:text-red-400">{problem}</p>
         ) : (
           <p className="text-slate-600 dark:text-slate-400">
             Введите, сколько часов в неделю уходит на рутину, и мы посчитаем, сколько это за год.

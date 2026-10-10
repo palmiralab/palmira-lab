@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calcRoutine } from './routine-calc';
+import { calcRoutine, findInputProblem } from './routine-calc';
 
 describe('calcRoutine', () => {
   it('считает часы, дни и стоимость в год', () => {
@@ -56,5 +56,29 @@ describe('calcRoutine', () => {
     expect(calcRoutine({ ...base, hoursPerWeek: 200 })).toBeNull();
     expect(calcRoutine({ ...base, people: Number.NaN })).toBeNull();
     expect(calcRoutine({ ...base, automatablePercent: 150 })).toBeNull();
+  });
+});
+
+describe('findInputProblem', () => {
+  const ok = { hoursPerWeek: 5, people: 1, hourlyCost: 0, automatablePercent: null };
+
+  it('для корректного ввода (и для пустых полей) проблем нет', () => {
+    expect(findInputProblem(ok)).toBeNull();
+    expect(findInputProblem({ ...ok, hoursPerWeek: 0 })).toBeNull();
+  });
+
+  it('называет поле и предел, если значение слишком большое', () => {
+    expect(findInputProblem({ ...ok, hoursPerWeek: 200 })).toBe(
+      'Часов рутины в неделю: не больше 168.',
+    );
+    expect(findInputProblem({ ...ok, automatablePercent: 150 })).toContain('Доля автоматизации');
+  });
+
+  it('просит число, если введено непонятное (NaN)', () => {
+    expect(findInputProblem({ ...ok, people: Number.NaN })).toContain('введите число');
+  });
+
+  it('сверхбольшое число (Infinity) тоже вне предела', () => {
+    expect(findInputProblem({ ...ok, hourlyCost: Infinity })).toContain('Стоимость часа');
   });
 });

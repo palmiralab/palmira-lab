@@ -10,6 +10,11 @@ describe('parseAmount', () => {
     expect(parseAmount(' 12 ')).toBe(12);
   });
 
+  it('разделитель в конце — число ещё печатается, не ошибка', () => {
+    expect(parseAmount('9.')).toBe(9);
+    expect(parseAmount('9,')).toBe(9);
+  });
+
   it('пустое поле — ноль', () => {
     expect(parseAmount('')).toBe(0);
     expect(parseAmount('   ')).toBe(0);
