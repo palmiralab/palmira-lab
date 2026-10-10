@@ -34,7 +34,7 @@ export default function ServicesPage() {
 
       {serviceGroups.map((group) => (
         <details key={group.title} open={openGroups.has(group.title)} className="group">
-          <summary className="cursor-pointer text-xl font-semibold text-slate-900 dark:text-slate-100">
+          <summary className="cursor-pointer select-none text-xl font-semibold text-slate-900 dark:text-slate-100">
             {group.title}
           </summary>
           <div className="mt-4 flex flex-col gap-4">
