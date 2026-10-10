@@ -43,20 +43,22 @@ export function RestartControl({ confirming, onRequest, onConfirm, onCancel }: R
         if (!confirming) setShowConfirm(false);
       }}
       className={
-        'flex items-center gap-2 text-sm ' +
+        'flex flex-wrap items-center gap-x-2 gap-y-1 text-sm ' +
         (confirming ? 'animate-[fade-in-up_0.2s_ease-out]' : 'animate-[fade-out-up_0.2s_ease-in]')
       }
     >
       <span className="text-slate-600 dark:text-slate-400">Начать заново? Прогресс потеряется.</span>
-      <button
-        onClick={onConfirm}
-        className="cursor-pointer font-medium text-red-600 hover:underline dark:text-red-400"
-      >
-        Да, заново
-      </button>
-      <button onClick={onCancel} className="cursor-pointer text-slate-500 hover:underline dark:text-slate-400">
-        Отмена
-      </button>
+      <span className="flex items-center gap-2 whitespace-nowrap">
+        <button
+          onClick={onConfirm}
+          className="cursor-pointer font-medium text-red-600 hover:underline dark:text-red-400"
+        >
+          Да, заново
+        </button>
+        <button onClick={onCancel} className="cursor-pointer text-slate-500 hover:underline dark:text-slate-400">
+          Отмена
+        </button>
+      </span>
     </div>
   );
 }
