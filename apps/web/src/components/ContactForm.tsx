@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { HONEYPOT_FIELD } from '@/lib/honeypot';
 import { inputClass, primaryButtonClass } from '@/lib/ui-classes';
 
 type ContactFormProps = {
@@ -65,6 +66,11 @@ export function ContactForm({
         placeholder="Телефон, email или Telegram"
         className={inputClass}
       />
+      {/* Приманка для ботов (см. lib/honeypot.ts): за экраном, не в порядке Tab,
+          скрыта от скринридеров и автозаполнения. */}
+      <div aria-hidden="true" className="absolute left-[-9999px] size-px overflow-hidden">
+        <input type="text" name={HONEYPOT_FIELD} tabIndex={-1} autoComplete="off" defaultValue="" />
+      </div>
       <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
         <button
           onClick={() => onContactSubmit()}

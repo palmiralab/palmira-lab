@@ -10,6 +10,7 @@ import { ManualReviewCard } from '@/components/ManualReviewCard';
 import { ProposalCard } from '@/components/ProposalCard';
 import { RestartControl } from '@/components/RestartControl';
 import { chatPlaceholders, chatStarters } from '@/lib/content';
+import { HONEYPOT_FIELD, readHoneypot } from '@/lib/honeypot';
 import { detailsFromMessages } from '@/lib/lead-details';
 import { buildDeclinedSubmission, type ContactSubmission } from '@/lib/manual-review';
 import { useRandomItem } from '@/lib/use-random-item';
@@ -202,6 +203,7 @@ export function ProposalChat() {
         body: JSON.stringify({
           name: contactName,
           contact: contactValue,
+          [HONEYPOT_FIELD]: readHoneypot(),
           ...(submission ?? {
             serviceType: proposal.serviceType,
             ...(chatDetails && { auditAnswers: chatDetails }),

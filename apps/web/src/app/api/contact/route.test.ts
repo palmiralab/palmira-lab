@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AUDIT_QUESTIONS, CHAT_CONTEXT_QUESTION } from '@/lib/audit-questions';
+import { HONEYPOT_FIELD } from '@/lib/honeypot';
 
 const sendContact = vi.hoisted(() => vi.fn());
 const checkRateLimit = vi.hoisted(() => vi.fn());
@@ -42,6 +43,20 @@ describe('POST /api/contact', () => {
       contact: '@anna',
       serviceType: 'telegram_automation',
     });
+  });
+
+  it('заполненная приманка для ботов: отвечает ok, но заявку не отправляет', async () => {
+    const response = await post({ ...valid, [HONEYPOT_FIELD]: 'http://spam.example' });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
+    expect(sendContact).not.toHaveBeenCalled();
+  });
+
+  it('пустая приманка (и из одних пробелов) заявку не мешает отправить', async () => {
+    await post({ ...valid, [HONEYPOT_FIELD]: '   ' });
+
+    expect(sendContact).toHaveBeenCalledOnce();
   });
 
   it('описание из auditAnswers.details уходит в API очищенным', async () => {

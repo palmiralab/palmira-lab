@@ -4,6 +4,7 @@ import {
   MAX_DETAILS_LENGTH,
   MAX_PROPOSAL_BYTES,
 } from '@/lib/contact-limits';
+import { HONEYPOT_FIELD } from '@/lib/honeypot';
 import { VALID_SERVICE_TYPES } from '@/lib/ai-provider/validate-model-response';
 import { sendContact } from '@/lib/intake-client';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -25,6 +26,15 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
+
+  // Приманка заполнена: это бот. Отвечаем успехом, чтобы он не понял, что его
+  // раскусили, но заявку не создаём. В лог только факт, без содержимого.
+  const honeypot = body?.[HONEYPOT_FIELD];
+  if (typeof honeypot === 'string' && honeypot.trim() !== '') {
+    console.warn('Заявка отброшена: заполнена приманка для ботов');
+    return Response.json({ ok: true });
+  }
+
   const name = typeof body?.name === 'string' ? body.name.trim() : '';
   const contact = typeof body?.contact === 'string' ? body.contact.trim() : '';
   const serviceType = VALID_SERVICE_TYPES.find((type) => type === body?.serviceType);

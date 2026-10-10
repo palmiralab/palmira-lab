@@ -1,5 +1,6 @@
 import type { ServiceType } from '@/lib/ai-provider/provider';
 import type { RawAnswers } from '@/lib/audit-answers';
+import { HONEYPOT_FIELD, readHoneypot } from '@/lib/honeypot';
 
 // Отправка заявки из браузера на маршрут сайта /api/contact. Не путать с
 // intake-client.ts: тот работает на сервере сайта и ходит уже в NestJS-API.
@@ -48,7 +49,7 @@ export async function submitContact(payload: SubmitContactPayload): Promise<Subm
     response = await fetch('/api/contact', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, [HONEYPOT_FIELD]: readHoneypot() }),
     });
   } catch {
     return { ok: false, kind: 'unavailable', message: GENERIC_ERROR };
