@@ -66,5 +66,15 @@ services:
       api:
         condition: service_healthy
 
+# С сервера Telegram доступен только по IPv6 (IPv4 к api.telegram.org закрыт),
+# а в сети Docker по умолчанию IPv6 нет: без этого API не отправляет уведомления
+# о заявках (UND_ERR_CONNECT_TIMEOUT). Диапазон внутренний, наружу выходит через хост.
+networks:
+  default:
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: fd00:d0c:1::/64
+
 volumes:
   postgres_data:
