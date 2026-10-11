@@ -37,6 +37,35 @@ const envSchema = z.object({
     .trim()
     .optional()
     .transform((value) => value || undefined),
+
+  // Почтовый дубль уведомления о заявке (Telegram с сервера нестабилен).
+  // Необязателен: без SMTP_USER, SMTP_PASSWORD и LEAD_EMAIL_TO канал выключен.
+  SMTP_HOST: z.string().trim().min(1).default('smtp.gmail.com'),
+  // 465: TLS сразу; 587: STARTTLS.
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(465),
+  SMTP_USER: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || undefined),
+  // Пароль приложения почты. Только в .env, не в репозитории и не в логах.
+  SMTP_PASSWORD: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || undefined),
+  // Куда слать заявки (ящик, который читает владелец).
+  LEAD_EMAIL_TO: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || undefined),
+  // От чьего имени слать; по умолчанию SMTP_USER.
+  LEAD_EMAIL_FROM: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || undefined),
 }).superRefine((env, ctx) => {
   // Одно без другого означает ошибку в настройке: тихо выключенные
   // уведомления заметили бы только когда лид уже потерялся.
@@ -52,6 +81,31 @@ const envSchema = z.object({
       code: 'custom',
       path: ['TELEGRAM_BOT_TOKEN'],
       message: 'задан chat_id, нужен и токен бота',
+    });
+  }
+  // Почта включается только целиком: полуготовая настройка означает ошибку,
+  // а тихо выключенный канал заметили бы, когда заявка уже потерялась.
+  const smtp = {
+    SMTP_USER: env.SMTP_USER,
+    SMTP_PASSWORD: env.SMTP_PASSWORD,
+    LEAD_EMAIL_TO: env.LEAD_EMAIL_TO,
+  };
+  if (Object.values(smtp).some(Boolean)) {
+    for (const [name, value] of Object.entries(smtp)) {
+      if (!value) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [name],
+          message: 'почта настроена не полностью, нужны SMTP_USER, SMTP_PASSWORD и LEAD_EMAIL_TO',
+        });
+      }
+    }
+  }
+  if (env.LEAD_EMAIL_TO && !/^\S+@\S+\.\S+$/.test(env.LEAD_EMAIL_TO)) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['LEAD_EMAIL_TO'],
+      message: 'должен быть адресом почты',
     });
   }
 });

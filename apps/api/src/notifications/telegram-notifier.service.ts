@@ -15,8 +15,8 @@ export interface NewLeadNotice {
 
 // Лимит Telegram на длину одного сообщения.
 const MESSAGE_LIMIT = 4096;
-// Telegram не должен задерживать ответ посетителю надолго.
-const REQUEST_TIMEOUT_MS = 3000;
+// Повторы и фон: см. LeadNotifier. Один запрос не должен висеть долго.
+const REQUEST_TIMEOUT_MS = 4000;
 
 const asString = (value: unknown): string | undefined =>
   typeof value === 'string' && value.trim() ? value.trim() : undefined;
@@ -107,7 +107,7 @@ function formatAuditAnswers(answers: Record<string, unknown>): string[] {
 // Шапка (имя, контакт, услуга, id лида) идёт целиком и всегда: по ней можно
 // связаться с клиентом. Режем только тело (КП и анкету), иначе при длинном
 // КП хвост унёс бы id лида.
-function formatLeadNotice(notice: NewLeadNotice): string {
+export function formatLeadNotice(notice: NewLeadNotice): string {
   const head = [
     'Новая заявка',
     '',

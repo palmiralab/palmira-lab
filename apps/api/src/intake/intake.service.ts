@@ -4,10 +4,8 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  TelegramNotifier,
-  type NewLeadNotice,
-} from '../notifications/telegram-notifier.service.js';
+import { LeadNotifier } from '../notifications/lead-notifier.service.js';
+import type { NewLeadNotice } from '../notifications/telegram-notifier.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateContactDto } from './dto/create-contact.dto.js';
 import { CreateContactResponse } from './dto/create-contact.response.js';
@@ -26,7 +24,7 @@ export class IntakeService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notifier: TelegramNotifier,
+    private readonly notifier: LeadNotifier,
   ) {}
 
   // Открывает разговор: посетитель анонимен, лида ещё нет. Идентификаторы
@@ -121,8 +119,9 @@ export class IntakeService {
     }
 
     // Уведомляем только после коммита: откатанный лид не должен попасть в
-    // чат. Сбой уведомления не ломает приём заявки (лид уже в базе).
-    await this.notifyNewLead({
+    // чат. Не ждём отправки: с повторами она может занять секунды, а посетителю
+    // ответ нужен сразу (лид уже в базе). Сбой уведомления заявку не ломает.
+    void this.notifyNewLead({
       leadId,
       name: dto.name,
       contact: dto.contact,

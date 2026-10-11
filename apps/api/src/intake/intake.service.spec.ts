@@ -1,4 +1,4 @@
-import type { TelegramNotifier } from '../notifications/telegram-notifier.service.js';
+import type { LeadNotifier } from '../notifications/lead-notifier.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import { FIRST_QUESTION, INTAKE_STEP } from './intake.constants.js';
 import { IntakeService } from './intake.service.js';
@@ -13,7 +13,7 @@ describe('IntakeService.start', () => {
     const create = vi.fn().mockResolvedValue(created);
     const prisma = { conversation: { create } } as unknown as PrismaService;
     // start() уведомлений не шлёт, поэтому подмена пустая.
-    const notifier = {} as unknown as TelegramNotifier;
+    const notifier = {} as unknown as LeadNotifier;
     return { create, service: new IntakeService(prisma, notifier) };
   }
 
@@ -68,7 +68,7 @@ describe('IntakeService.createContact: повторные заявки', () => {
     const notifier = { notifyNewLead: vi.fn().mockResolvedValue(undefined) };
     const service = new IntakeService(
       prisma,
-      notifier as unknown as TelegramNotifier,
+      notifier as unknown as LeadNotifier,
     );
     return { tx, notifier, service };
   }
@@ -91,6 +91,25 @@ describe('IntakeService.createContact: повторные заявки', () => {
     });
     expect(tx.lead.create).toHaveBeenCalledOnce();
     expect(notifier.notifyNewLead).toHaveBeenCalledOnce();
+  });
+
+  it('не ждёт уведомление: посетитель получает ответ, пока отправка ещё идёт', async () => {
+    const { notifier, service } = setup(existing.slice(0, 2));
+    notifier.notifyNewLead.mockReturnValue(new Promise<void>(() => {}));
+
+    await expect(service.createContact(dto)).resolves.toEqual({
+      leadId: 'new-lead',
+    });
+    expect(notifier.notifyNewLead).toHaveBeenCalledOnce();
+  });
+
+  it('сбой уведомления не ломает приём заявки', async () => {
+    const { notifier, service } = setup(existing.slice(0, 2));
+    notifier.notifyNewLead.mockRejectedValue(new Error('Telegram недоступен'));
+
+    await expect(service.createContact(dto)).resolves.toEqual({
+      leadId: 'new-lead',
+    });
   });
 
   it('контакт записан иначе (регистр, @), но считается тем же', async () => {

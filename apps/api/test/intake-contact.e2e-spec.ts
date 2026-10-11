@@ -4,7 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
-import { TelegramNotifier } from '../src/notifications/telegram-notifier.service.js';
+import { LeadNotifier } from '../src/notifications/lead-notifier.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 
 // Сквозная проверка на живой базе: HTTP-запрос → транзакция → строки в lead и
@@ -50,7 +50,7 @@ describe('POST /api/v1/intake/contact (e2e)', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     })
-      .overrideProvider(TelegramNotifier)
+      .overrideProvider(LeadNotifier)
       .useValue(notifier)
       .compile();
     app = moduleRef.createNestApplication();
