@@ -49,5 +49,22 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  # Next.js (standalone). Контекст сборки: корень репозитория (нужен certs/),
+  # Dockerfile в apps/web. На хост выставлен только 127.0.0.1:3010, наружу
+  # его отдаст nginx. API_URL внутри сети: http://api:3100 (см. web.env).
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runtime
+    image: palmira-web
+    restart: unless-stopped
+    env_file: web.env
+    ports:
+      - "127.0.0.1:3010:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   postgres_data:

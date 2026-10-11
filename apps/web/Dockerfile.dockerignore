@@ -1,0 +1,12 @@
+**/node_modules
+**/.next
+**/.env
+**/.env.*
+**/dist
+**/coverage
+**/*.tsbuildinfo
+**/.idea
+.git
+apps/api
+apps/web/scripts
+docs
