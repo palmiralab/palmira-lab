@@ -13,9 +13,30 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const description = "ИИ-агенты, сайты и автоматизация — опишите задачу, получите КП за секунды.";
+
 export const metadata: Metadata = {
+  // Адрес нужен, чтобы ссылки на картинку превью (og:image) были абсолютными:
+  // мессенджеры не понимают относительные. Пока тестовый домен; главный домен
+  // выберем позже (там же каноническая ссылка).
+  metadataBase: new URL("https://palmira-lab.online"),
   title: "Palmira Lab",
-  description: "ИИ-агенты, сайты и автоматизация — опишите задачу, получите КП за секунды.",
+  description,
+  // Превью ссылки в мессенджерах (Telegram и др.); картинка лежит рядом:
+  // opengraph-image.png (Next подставит og:image сам).
+  openGraph: {
+    type: "website",
+    siteName: "Palmira Lab",
+    locale: "ru_RU",
+    title: "Palmira Lab — ИИ-агенты, сайты и автоматизация",
+    description,
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Palmira Lab — ИИ-агенты, сайты и автоматизация",
+    description,
+  },
 };
 
 // Ставит класс .dark до первой отрисовки — иначе страница на долю секунды
