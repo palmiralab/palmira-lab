@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Ручной запуск из вкладки Actions (кнопка Run workflow, когда файл есть в main).
+  workflow_dispatch:
 
 # Новый запуск на ту же ветку отменяет предыдущий, чтобы не копить очередь.
 concurrency:
