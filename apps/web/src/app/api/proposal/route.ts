@@ -1,4 +1,4 @@
-import { gigaChatProvider } from '@/lib/ai-provider/gigachat';
+import { gigaChatProvider, isRateLimitError } from '@/lib/ai-provider/gigachat';
 import { mergeProposal } from '@/lib/ai-provider/merge';
 import { checkRateLimit } from '@/lib/rate-limit';
 
@@ -60,6 +60,12 @@ export async function POST(request: Request) {
     return Response.json({ type: 'proposal', proposal: mergeProposal(modelResponse) });
   } catch (err) {
     console.error('proposal generation failed', err);
+    if (isRateLimitError(err)) {
+      return Response.json(
+        { error: 'Сейчас много обращений, попробуйте ещё раз через минуту' },
+        { status: 503 },
+      );
+    }
     return Response.json({ error: 'Не удалось сгенерировать предложение' }, { status: 502 });
   }
 }

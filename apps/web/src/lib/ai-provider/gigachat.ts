@@ -1,12 +1,33 @@
 import type { ModelResponse, ProposalGenerationProvider } from './provider';
 import { buildProposalSystemPrompt, buildTextJsonProposalSystemPrompt } from './prompts';
 import { isValidModelResponse, normalizeModelResponse } from './validate-model-response';
+import { createSerialGate, retryOnRateLimit } from './concurrency-gate';
 
 const OAUTH_URL = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth';
 const COMPLETIONS_URL = 'https://api.giga.chat/v1/chat/completions';
 const MODEL = process.env.GIGACHAT_MODEL || 'GigaChat-2-Max';
 const REQUEST_TIMEOUT_MS = 30_000;
 const TOKEN_REFRESH_MARGIN_MS = 60_000;
+// Бесплатный тариф: один одновременный запрос. Запросы идут по одному, а 429 от
+// шлюза (чужой запрос ещё не закончился) повторяем, пока общее ожидание не
+// превысит предел.
+const RATE_LIMIT_MAX_WAIT_MS = 20_000;
+const RATE_LIMIT_DELAYS_MS = [1_000, 2_000, 3_000, 4_000, 5_000] as const;
+const completionGate = createSerialGate();
+
+export class GigaChatHttpError extends Error {
+  constructor(
+    readonly status: number,
+    body: string,
+  ) {
+    super(`GigaChat completions failed: ${status} ${body}`);
+    this.name = 'GigaChatHttpError';
+  }
+}
+
+export function isRateLimitError(err: unknown): boolean {
+  return err instanceof GigaChatHttpError && err.status === 429;
+}
 
 type CachedToken = {
   accessToken: string;
@@ -82,7 +103,19 @@ const CONTENT_FILTERED_REPLY =
 
 const MAX_VALIDATION_ATTEMPTS = 3;
 
-async function requestCompletionContent(
+function requestCompletionContent(
+  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
+): Promise<{ content: string; filtered: boolean }> {
+  return completionGate(() =>
+    retryOnRateLimit(() => requestCompletionContentOnce(messages), {
+      isRateLimit: isRateLimitError,
+      maxWaitMs: RATE_LIMIT_MAX_WAIT_MS,
+      delaysMs: RATE_LIMIT_DELAYS_MS,
+    }),
+  );
+}
+
+async function requestCompletionContentOnce(
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
 ): Promise<{ content: string; filtered: boolean }> {
   const accessToken = await getAccessToken();
@@ -111,7 +144,7 @@ async function requestCompletionContent(
   }
 
   if (!response.ok) {
-    throw new Error(`GigaChat completions failed: ${response.status} ${await response.text()}`);
+    throw new GigaChatHttpError(response.status, await response.text());
   }
 
   const data = (await response.json()) as GigaChatCompletionsResponse;
@@ -306,7 +339,7 @@ async function requestCompletionContentStrictSchema(
   }
 
   if (!response.ok) {
-    throw new Error(`GigaChat completions failed: ${response.status} ${await response.text()}`);
+    throw new GigaChatHttpError(response.status, await response.text());
   }
 
   const data = (await response.json()) as GigaChatCompletionsResponse;
