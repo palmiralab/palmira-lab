@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { RoutineCalculatorForm } from '@/components/RoutineCalculatorForm';
 import { primaryButtonClass } from '@/lib/ui-classes';
+import { NoBreak } from '@/components/NoBreak';
 
 // Тело демо «Калькулятор рутины»: форма с живым расчётом и пояснения. Заголовок и
 // вводный абзац страницы берутся из данных (lib/content.ts).
@@ -38,7 +39,7 @@ export function RoutineCalculatorDemo() {
           стоит.
         </p>
         <Link href="/audit" className={`${primaryButtonClass} mt-2 self-start text-center`}>
-          Заказать бесплатный ИИ-аудит
+          <NoBreak>Заказать бесплатный ИИ-аудит</NoBreak>
         </Link>
       </section>
     </>
