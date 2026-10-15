@@ -15,6 +15,7 @@ import {
 } from '@/lib/audit-wizard';
 import { submitContact } from '@/lib/submit-contact';
 import { primaryButtonClass, secondaryButtonClass } from '@/lib/ui-classes';
+import { NoBreak } from '@/components/NoBreak';
 
 const SUCCESS_TEXT = 'Заявка на аудит принята. Пришлём карту процессов за 1–2 рабочих дня.';
 
@@ -93,7 +94,7 @@ export function AuditQuestionnaire({
       <div className="flex flex-col gap-2">
         {showHeading && (
           <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-            Бесплатный ИИ-аудит
+            <NoBreak>Бесплатный ИИ-аудит</NoBreak>
           </h2>
         )}
         {state.step === 0 && (

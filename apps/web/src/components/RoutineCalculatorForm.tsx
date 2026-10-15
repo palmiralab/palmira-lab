@@ -11,6 +11,7 @@ import {
   WORK_WEEKS_PER_YEAR,
 } from '@/lib/routine-calc';
 import { inputClass } from '@/lib/ui-classes';
+import { NoBreak } from '@/components/NoBreak';
 
 // h-full и justify-between: ячейка растягивается на высоту ряда сетки, подпись остаётся
 // сверху, а поле прижато вниз, поэтому поля в одном ряду стоят на одной линии,
@@ -137,7 +138,7 @@ export function RoutineCalculatorForm() {
       <p className="text-slate-600 dark:text-slate-400">
         Не знаете, что из этого реально автоматизировать?{' '}
         <Link href="/audit" className="text-emerald-700 underline dark:text-emerald-400">
-          Бесплатный ИИ-аудит →
+          <NoBreak>Бесплатный ИИ-аудит →</NoBreak>
         </Link>
       </p>
     </div>

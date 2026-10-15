@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { AuditQuestionnaire } from '@/components/AuditQuestionnaire';
 import { ContactForm } from '@/components/ContactForm';
 import { primaryButtonClass } from '@/lib/ui-classes';
+import { NoBreak } from '@/components/NoBreak';
 
 type ManualReviewCardProps = {
   contactName: string;
@@ -63,7 +64,7 @@ export function ManualReviewCard({
             мы пришлём карту процессов за 1–2 рабочих дня.
           </p>
           <button onClick={() => setStep('audit')} className={primaryButtonClass}>
-            Заказать бесплатный ИИ-аудит
+            <NoBreak>Заказать бесплатный ИИ-аудит</NoBreak>
           </button>
           <button
             onClick={() => setStep('declined')}

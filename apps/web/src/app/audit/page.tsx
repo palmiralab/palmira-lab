@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { AuditQuestionnaire } from '@/components/AuditQuestionnaire';
+import { NoBreak } from '@/components/NoBreak';
 
 export const metadata: Metadata = {
   title: 'Заказать бесплатный ИИ-аудит — PalmiraLab',
@@ -19,7 +20,7 @@ export default function AuditPage() {
           ← На главную
         </Link>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-          Бесплатный ИИ-аудит
+          <NoBreak>Бесплатный ИИ-аудит</NoBreak>
         </h1>
       </div>
 
