@@ -30,6 +30,31 @@ describe('validate (env)', () => {
     expect(() => validate({ ...validEnv, PORT: '70000' })).toThrow(/PORT/);
   });
 
+  describe('SWAGGER_ENABLED', () => {
+    it('по умолчанию выключен', () => {
+      expect(validate(validEnv).SWAGGER_ENABLED).toBe(false);
+    });
+
+    it('"true" включает', () => {
+      expect(
+        validate({ ...validEnv, SWAGGER_ENABLED: 'true' }).SWAGGER_ENABLED,
+      ).toBe(true);
+    });
+
+    // Ловушка Boolean("false") === true: строка "false" обязана выключать.
+    it('"false" выключает', () => {
+      expect(
+        validate({ ...validEnv, SWAGGER_ENABLED: 'false' }).SWAGGER_ENABLED,
+      ).toBe(false);
+    });
+
+    it('падает на опечатке и называет переменную', () => {
+      expect(() => validate({ ...validEnv, SWAGGER_ENABLED: 'flase' })).toThrow(
+        /SWAGGER_ENABLED/,
+      );
+    });
+  });
+
   it('падает на неизвестном NODE_ENV', () => {
     expect(() => validate({ ...validEnv, NODE_ENV: 'staging' })).toThrow(
       /NODE_ENV/,
