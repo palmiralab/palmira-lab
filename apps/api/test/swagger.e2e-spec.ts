@@ -1,10 +1,15 @@
+import { readFileSync } from 'node:fs';
 import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
-import { buildOpenApiDocument, setupSwagger } from '../src/swagger.js';
+import {
+  buildOpenApiDocument,
+  OPENAPI_FILE,
+  setupSwagger,
+} from '../src/swagger.js';
 
 describe('Swagger (e2e)', () => {
   let app: INestApplication<App>;
@@ -42,6 +47,18 @@ describe('Swagger (e2e)', () => {
       '404',
       '409',
     ]);
+  });
+
+  // Если упал: изменился API, перегенерируйте файл командой `npm run openapi`
+  // (в apps/api) и закоммитьте его вместе с изменением.
+  it('docs/openapi.json в репозитории совпадает с текущей схемой', () => {
+    const committed: unknown = JSON.parse(readFileSync(OPENAPI_FILE, 'utf8'));
+    // Через JSON, как при записи в файл: так пропадают поля со значением undefined.
+    const current: unknown = JSON.parse(
+      JSON.stringify(buildOpenApiDocument(app)),
+    );
+
+    expect(committed).toEqual(current);
   });
 
   it('без setupSwagger страницы документации нет', async () => {

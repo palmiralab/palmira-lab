@@ -1,0 +1,223 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/intake/start": {
+      "post": {
+        "operationId": "IntakeController_start",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartIntakeResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Открыть разговор с ассистентом",
+        "tags": [
+          "intake"
+        ]
+      }
+    },
+    "/api/v1/intake/contact": {
+      "post": {
+        "operationId": "IntakeController_createContact",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateContactResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Поля не прошли проверку"
+          },
+          "404": {
+            "description": "Разговор conversationId не найден"
+          },
+          "409": {
+            "description": "Разговор уже привязан к другой заявке"
+          }
+        },
+        "summary": "Оставить контакт: создаёт заявку",
+        "tags": [
+          "intake"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Palmira Lab API",
+    "description": "Заявки с сайта: старт разговора с ассистентом и контакт клиента.",
+    "version": "1",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ],
+            "example": "ok"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "IntakeMessage": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "assistant"
+            ],
+            "example": "assistant"
+          },
+          "content": {
+            "type": "string",
+            "example": "Расскажите, какую задачу хотите решить…"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ]
+      },
+      "StartIntakeResponse": {
+        "type": "object",
+        "properties": {
+          "conversationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "message": {
+            "$ref": "#/components/schemas/IntakeMessage"
+          }
+        },
+        "required": [
+          "conversationId",
+          "sessionId",
+          "message"
+        ]
+      },
+      "ServiceType": {
+        "type": "string",
+        "enum": [
+          "telegram_automation",
+          "website_landing",
+          "content_automation",
+          "ai_consultation",
+          "manual_review"
+        ]
+      },
+      "CreateContactDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "example": "Анна"
+          },
+          "contact": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Телефон, почта или ник в Telegram",
+            "example": "@anna"
+          },
+          "serviceType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceType"
+              }
+            ]
+          },
+          "auditAnswers": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Ответы анкеты аудита, не больше 16384 байт в JSON"
+          },
+          "proposal": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "КП, которое видел клиент, не больше 20480 байт в JSON"
+          },
+          "conversationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "name",
+          "contact",
+          "serviceType"
+        ]
+      },
+      "CreateContactResponse": {
+        "type": "object",
+        "properties": {
+          "leadId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "leadId"
+        ]
+      }
+    }
+  }
+}
