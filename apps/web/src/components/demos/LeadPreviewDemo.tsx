@@ -9,7 +9,7 @@ export function LeadPreviewDemo() {
     <>
       <section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-          Что здесь происходит
+          Как будет выглядеть заявка
         </h2>
         <ol className="mt-3 list-decimal space-y-1 pl-5 text-slate-600 dark:text-slate-400">
           <li>Вы вводите данные вымышленного «клиента» и выбираете услугу.</li>
@@ -36,8 +36,8 @@ export function LeadPreviewDemo() {
           почте или формах: вы реагируете, пока клиент ещё не ушёл к другим.
         </p>
         <p className="text-slate-600 dark:text-slate-400">
-          В работе состав сообщения, канал (Telegram или другой) и то, кому оно приходит,
-          подбираются под ваш процесс.
+          В вашем проекте форма, текст сообщения, канал (Telegram или другой) и адресат (вы или
+          менеджер) подбираются под ваш процесс.
         </p>
         <Link
           href="/services/telegram-bot"

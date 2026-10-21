@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, type TransformFnParams } from 'class-transformer';
 import {
   IsEnum,
@@ -33,23 +34,36 @@ const trim = ({ value }: TransformFnParams): unknown =>
 // DTO это класс, а не интерфейс: интерфейса нет после компиляции, и
 // ValidationPipe нечем было бы проверять поля.
 export class CreateContactDto {
+  @ApiProperty({ minLength: 1, maxLength: MAX_FIELD_LENGTH, example: 'Анна' })
   @Transform(trim)
   @IsString()
   @MinLength(1)
   @MaxLength(MAX_FIELD_LENGTH)
   name!: string;
 
+  @ApiProperty({
+    minLength: 1,
+    maxLength: MAX_FIELD_LENGTH,
+    description: 'Телефон, почта или ник в Telegram',
+    example: '@anna',
+  })
   @Transform(trim)
   @IsString()
   @MinLength(1)
   @MaxLength(MAX_FIELD_LENGTH)
   contact!: string;
 
+  @ApiProperty({ enum: ServiceType, enumName: 'ServiceType' })
   @IsEnum(ServiceType)
   serviceType!: ServiceType;
 
   // Ответы анкеты аудита целиком; структуру не проверяем (набор вопросов
   // задаётся на сайте и может меняться), но размер режем, как у proposal.
+  @ApiPropertyOptional({
+    type: 'object',
+    additionalProperties: true,
+    description: `Ответы анкеты аудита, не больше ${MAX_AUDIT_ANSWERS_BYTES} байт в JSON`,
+  })
   @IsOptional()
   @IsObject()
   @MaxJsonBytes(MAX_AUDIT_ANSWERS_BYTES)
@@ -58,6 +72,11 @@ export class CreateContactDto {
   // КП, которое видел клиент, снимком. Форму не проверяем (она меняется на
   // сайте), но размер режем: API публичный, и сверх общего лимита тела запроса
   // (100 КБ по умолчанию у Express) в базу и Telegram такое не нужно.
+  @ApiPropertyOptional({
+    type: 'object',
+    additionalProperties: true,
+    description: `КП, которое видел клиент, не больше ${MAX_PROPOSAL_BYTES} байт в JSON`,
+  })
   @IsOptional()
   @IsObject()
   @MaxJsonBytes(MAX_PROPOSAL_BYTES)
@@ -65,6 +84,7 @@ export class CreateContactDto {
 
   // Необязательный: сайт пока не открывает разговор в API (его чат ходит в
   // Next-маршруты), после подключения станет приходить всегда.
+  @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
   @IsUUID()
   conversationId?: string;

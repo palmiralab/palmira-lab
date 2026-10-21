@@ -35,6 +35,12 @@ const QUESTION_GUIDANCE = `Если решаешь задать уточняющ
 представить и для кого). Вопрос про бюджет — аккуратно, не в лоб, и только
 если он реально влияет на объём предложения.`;
 
+// Голос ассистента: единый грамматический род, чтобы в одном диалоге ответы не
+// «прыгали» между мужским и женским. Род общий для сайта: мужской.
+export const VOICE_GUIDANCE = `О себе говори только в мужском роде («понял», «подготовил», «могу помочь»)
+и никогда не переходи на женский род, даже если клиент обращается к тебе в
+женском. К клиенту обращайся на «вы», не называй себя человеком.`;
+
 // Мягкий счётчик — решение Сессии 1 (25.09): модель не считает сама, ей
 // приносят готовое число (см. llm-nature-log.md). questionsAsked вычисляется
 // в коде провайдера из истории сообщений, не хранится и не считается моделью.
@@ -70,6 +76,8 @@ ${SERVICE_TYPE_DEFINITIONS}
 
 ${QUESTION_GUIDANCE}
 
+${VOICE_GUIDANCE}
+
 ${buildResponseModeInstruction(questionsAsked)}
 
 Никогда не указывай итоговую цену, сроки или юридические гарантии — эти поля
@@ -92,6 +100,8 @@ export function buildTextJsonProposalSystemPrompt(questionsAsked: number): strin
 ${SERVICE_TYPE_DEFINITIONS}
 
 ${QUESTION_GUIDANCE}
+
+${VOICE_GUIDANCE}
 
 ${buildResponseModeInstruction(questionsAsked)}
 

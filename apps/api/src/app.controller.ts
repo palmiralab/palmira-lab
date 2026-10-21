@@ -1,6 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
+import { ApiExcludeController } from '@nestjs/swagger';
 import { AppService } from './app.service.js';
 
+// Заготовка Nest («Hello World»), клиентам не нужна: в документацию не попадает.
+@ApiExcludeController()
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}

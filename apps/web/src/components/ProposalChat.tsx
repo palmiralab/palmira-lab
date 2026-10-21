@@ -16,6 +16,7 @@ import { buildDeclinedSubmission, type ContactSubmission } from '@/lib/manual-re
 import { useRandomItem } from '@/lib/use-random-item';
 import { outcomeFor } from '@/lib/proposal-outcome';
 import { inputClass, primaryButtonClass } from '@/lib/ui-classes';
+import { NoBreak } from '@/components/NoBreak';
 
 // Ровно то, что уходит в POST /api/proposal messages[] — история диалога,
 // без финальной карточки КП (она не текст, отдельное состояние `proposal`,
@@ -356,7 +357,7 @@ export function ProposalChat() {
                   href="/audit"
                   className="rounded-full border border-emerald-600 px-3 py-1 text-sm text-emerald-700 hover:bg-emerald-50 dark:border-emerald-400 dark:text-emerald-300 dark:hover:bg-emerald-950"
                 >
-                  Заказать бесплатный ИИ-аудит →
+                  <NoBreak>Заказать бесплатный ИИ-аудит →</NoBreak>
                 </Link>
               </div>
             </div>

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { findService, serviceGroups } from '@/lib/content';
 import { primaryButtonClass } from '@/lib/ui-classes';
+import { NoBreak } from '@/components/NoBreak';
 
 export function generateStaticParams() {
   return serviceGroups.flatMap((group) => group.items.map((item) => ({ slug: item.slug })));
@@ -53,7 +54,7 @@ export default async function ServicePage(props: PageProps<'/services/[slug]'>) 
             href={item.primaryAction.href}
             className={`${primaryButtonClass} self-start text-center`}
           >
-            {item.primaryAction.label}
+            <NoBreak>{item.primaryAction.label}</NoBreak>
           </Link>
         )}
       </div>
@@ -74,7 +75,7 @@ export default async function ServicePage(props: PageProps<'/services/[slug]'>) 
             </Section>
           )}
 
-          <Section title="Кому подходит">
+          <Section title="Подходит вам, если">
             <ul className={listClass}>
               {detail.forWhom.map((line) => (
                 <li key={line}>{line}</li>
@@ -136,12 +137,12 @@ export default async function ServicePage(props: PageProps<'/services/[slug]'>) 
       <div className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <p className="text-slate-700 dark:text-slate-300">
           {slug === 'ai-audit'
-            ? 'Ответьте на несколько вопросов о вашем бизнесе, и вы получите страницу с разбором. Бесплатно и без обязательств.'
-            : 'Не уверены, подходит ли это вам? Начните с бесплатного ИИ-аудита: несколько вопросов о вашем бизнесе, и вы получите страницу с разбором.'}
+            ? 'Ответьте на несколько вопросов о вашем бизнесе. Получите страницу с разбором безвозмездно и без обязательств.'
+            : 'Не уверены, что это вам подойдёт? Начните с бесплатного ИИ-аудита: несколько вопросов о вашем бизнесе, и вы получите страницу с разбором.'}
         </p>
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
           <Link href="/audit" className="text-emerald-700 underline dark:text-emerald-400">
-            Заказать бесплатный ИИ-аудит →
+            <NoBreak>Заказать бесплатный ИИ-аудит →</NoBreak>
           </Link>
           {slug !== 'ai-audit' && (
             <Link

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cases, findCase } from '@/lib/content';
+import { NoBreak } from '@/components/NoBreak';
 
 export function generateStaticParams() {
   return cases.map((item) => ({ slug: item.slug }));
@@ -134,7 +135,7 @@ export default async function CasePage(props: PageProps<'/cases/[slug]'>) {
         </p>
         <div className="mt-3">
           <Link href="/audit" className={linkClass}>
-            Заказать бесплатный ИИ-аудит →
+            <NoBreak>Заказать бесплатный ИИ-аудит →</NoBreak>
           </Link>
         </div>
       </div>
