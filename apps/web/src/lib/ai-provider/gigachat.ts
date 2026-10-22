@@ -1,6 +1,10 @@
 import type { ModelResponse, ProposalGenerationProvider } from './provider';
 import { buildProposalSystemPrompt, buildTextJsonProposalSystemPrompt } from './prompts';
-import { isValidModelResponse, normalizeModelResponse } from './validate-model-response';
+import {
+  VALID_SERVICE_TYPES,
+  isValidModelResponse,
+  normalizeModelResponse,
+} from './validate-model-response';
 import { createSerialGate, retryOnRateLimit } from './concurrency-gate';
 
 const OAUTH_URL = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth';
@@ -272,13 +276,7 @@ const MODEL_RESPONSE_SCHEMA = {
         type: { type: 'string', enum: ['proposal'] },
         serviceType: {
           type: 'string',
-          enum: [
-            'telegram_automation',
-            'website_landing',
-            'content_automation',
-            'ai_consultation',
-            'manual_review',
-          ],
+          enum: VALID_SERVICE_TYPES,
           description: 'Категория услуги, к которой относится запрос клиента',
         },
         title: { type: 'string', description: 'Короткое название предложения' },

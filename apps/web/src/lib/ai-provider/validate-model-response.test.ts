@@ -21,7 +21,7 @@ describe('normalizeModelResponse', () => {
     expect(isValidModelResponse(normalized)).toBe(true);
   });
 
-  it.each(['telegram_automation', 'website_landing', 'content_automation'])(
+  it.each(['telegram_automation', 'website_landing', 'content_automation', 'out_of_scope'])(
     '{ type: %s } с КП не трогаем: остаётся невалидным',
     (type) => {
       const value = { type };

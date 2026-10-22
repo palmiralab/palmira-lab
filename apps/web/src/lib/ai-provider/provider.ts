@@ -3,7 +3,8 @@ export type ServiceType =
   | 'website_landing'
   | 'content_automation'
   | 'ai_consultation'
-  | 'manual_review';
+  | 'manual_review'
+  | 'out_of_scope';
 
 export type ProposalPackage = 'start' | 'optimal' | 'extended';
 

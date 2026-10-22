@@ -13,6 +13,7 @@ export function outcomeFor(serviceType: ServiceType): ProposalOutcome {
     case 'telegram_automation':
     case 'website_landing':
     case 'content_automation':
+    case 'out_of_scope':
       return 'quote';
     case 'ai_consultation':
       return 'audit';
@@ -20,3 +21,4 @@ export function outcomeFor(serviceType: ServiceType): ProposalOutcome {
       return 'manual';
   }
 }
+

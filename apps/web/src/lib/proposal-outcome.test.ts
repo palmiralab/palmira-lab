@@ -9,6 +9,7 @@ describe('outcomeFor', () => {
     ['content_automation', 'quote'],
     ['ai_consultation', 'audit'],
     ['manual_review', 'manual'],
+    ['out_of_scope', 'quote'],
   ] as const)('%s → %s', (serviceType, expected) => {
     expect(outcomeFor(serviceType)).toBe(expected);
   });
