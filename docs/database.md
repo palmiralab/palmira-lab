@@ -87,12 +87,17 @@ erDiagram
 
 | Тип | Значения |
 |---|---|
-| `service_type` | `telegram_automation`, `website_landing`, `content_automation`, `ai_consultation`, `manual_review` |
+| `service_type` | `telegram_automation`, `website_landing`, `content_automation`, `ai_consultation`, `manual_review`, `out_of_scope` |
 | `lead_status` | `new`, `contacted`, `qualified`, `proposal`, `won`, `lost`, `manual_review` |
 
 Жизненный цикл статуса: `new → contacted → qualified → proposal → won`,
 ответвление `lost`; `manual_review` для непонятных или нестандартных
 запросов.
+
+Разница двух «нестандартных» значений `service_type`: `out_of_scope` —
+задача понятна, но вне типовых услуг (клиент видит КП с пометкой, что
+запрос рассмотрит менеджер, КП сохраняется в `proposal`); `manual_review` —
+суть задачи так и не прояснилась, КП нет.
 
 ## План (ещё не в базе)
 

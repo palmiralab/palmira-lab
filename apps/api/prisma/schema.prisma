@@ -16,6 +16,7 @@ enum ServiceType {
   content_automation
   ai_consultation
   manual_review
+  out_of_scope
 
   @@map("service_type")
 }

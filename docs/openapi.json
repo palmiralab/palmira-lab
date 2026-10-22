@@ -159,7 +159,8 @@
           "website_landing",
           "content_automation",
           "ai_consultation",
-          "manual_review"
+          "manual_review",
+          "out_of_scope"
         ]
       },
       "CreateContactDto": {
