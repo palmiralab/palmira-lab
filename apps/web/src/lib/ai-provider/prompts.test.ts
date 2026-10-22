@@ -22,3 +22,30 @@ describe('голос ассистента', () => {
     }
   });
 });
+
+describe('ручной разбор (manual_review)', () => {
+  const prompts = (questionsAsked: number) => [
+    buildProposalSystemPrompt(questionsAsked),
+    buildTextJsonProposalSystemPrompt(questionsAsked),
+  ];
+
+  it('после лимита вопросов КП не выдаётся «в любом случае»', () => {
+    for (const prompt of prompts(3)) {
+      expect(prompt).not.toContain('в любом случае');
+    }
+  });
+
+  it('несодержательный диалог после лимита ведёт в manual_review', () => {
+    for (const prompt of prompts(3)) {
+      expect(prompt).toContain('так и не стало понятно');
+      expect(prompt).toContain('Не придумывай задачу за клиента');
+    }
+  });
+
+  it('задачи вне компетенции относятся к out_of_scope, а не к manual_review', () => {
+    for (const prompt of prompts(0)) {
+      expect(prompt).toMatch(/- out_of_scope — [^-]*смарт-контракты/);
+      expect(prompt).not.toMatch(/- manual_review — [^-]*смарт-контракты/);
+    }
+  });
+});

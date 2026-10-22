@@ -7,6 +7,7 @@ export const VALID_SERVICE_TYPES: ServiceType[] = [
   'content_automation',
   'ai_consultation',
   'manual_review',
+  'out_of_scope',
 ];
 
 // Общая для всех провайдеров без серверной гарантии формы (сейчас — оба,

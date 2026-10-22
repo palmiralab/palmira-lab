@@ -155,6 +155,20 @@ describe('POST /api/v1/intake/contact (e2e)', () => {
     );
   });
 
+  it('принимает задачу вне типовых услуг (out_of_scope) вместе с КП', async () => {
+    const proposal = { title: 'Смарт-контракт', scope: ['Разбор задачи'] };
+    const res = await post({
+      ...validBody,
+      serviceType: 'out_of_scope',
+      proposal,
+    }).expect(201);
+
+    const lead = await prisma.lead.findUniqueOrThrow({
+      where: { id: res.body.leadId },
+    });
+    expect(lead).toMatchObject({ serviceType: 'out_of_scope', proposal });
+  });
+
   it('привязывает разговор к лиду в той же транзакции', async () => {
     const conversation = await newConversation();
     const res = await post({
