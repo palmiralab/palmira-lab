@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Proposal } from '@/lib/ai-provider/provider';
 import { ContactForm } from '@/components/ContactForm';
+import { proposalNotice } from '@/lib/proposal-outcome';
 
 // GigaChat иногда сам добавляет "- " в начало пунктов массива — при рендере
 // в <li> это задвоило бы буллет ("• - текст"), убираем.
@@ -29,8 +30,18 @@ export function ProposalCard({
   onContactSubmit,
   restartControl,
 }: ProposalCardProps) {
+  const notice = proposalNotice(proposal.serviceType);
+
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+      {notice && (
+        <p
+          role="note"
+          className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+        >
+          {notice}
+        </p>
+      )}
       <div>
         <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{proposal.title}</h2>
         <p className="mt-1 text-slate-600 dark:text-slate-400">{proposal.problemSummary}</p>
