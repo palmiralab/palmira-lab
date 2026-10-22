@@ -2,11 +2,24 @@ import type { ReactNode } from 'react';
 import type { Proposal } from '@/lib/ai-provider/provider';
 import { ContactForm } from '@/components/ContactForm';
 import { proposalNotice } from '@/lib/proposal-outcome';
+import { listItems } from '@/lib/proposal-list';
 
-// GigaChat иногда сам добавляет "- " в начало пунктов массива — при рендере
-// в <li> это задвоило бы буллет ("• - текст"), убираем.
-function stripBullet(text: string): string {
-  return text.replace(/^[-•]\s*/, '');
+// Раздел со списком; пустой (после очистки пунктов) не показываем вовсе, чтобы
+// в КП не висел заголовок без содержимого.
+function ListSection({ title, items }: { title: string; items: string[] }) {
+  const visible = listItems(items);
+  if (visible.length === 0) return null;
+
+  return (
+    <div>
+      <h3 className="font-medium text-slate-900 dark:text-slate-100">{title}</h3>
+      <ul className="mt-1 list-disc space-y-1 pl-5 text-slate-700 dark:text-slate-300">
+        {visible.map((item, i) => (
+          <li key={i}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 type ProposalCardProps = {
@@ -47,32 +60,11 @@ export function ProposalCard({
         <p className="mt-1 text-slate-600 dark:text-slate-400">{proposal.problemSummary}</p>
       </div>
 
-      <div>
-        <h3 className="font-medium text-slate-900 dark:text-slate-100">Состав работ</h3>
-        <ul className="mt-1 list-disc space-y-1 pl-5 text-slate-700 dark:text-slate-300">
-          {proposal.scope.map((item, i) => (
-            <li key={i}>{stripBullet(item)}</li>
-          ))}
-        </ul>
-      </div>
+      <ListSection title="Состав работ" items={proposal.scope} />
 
-      <div>
-        <h3 className="font-medium text-slate-900 dark:text-slate-100">Допущения</h3>
-        <ul className="mt-1 list-disc space-y-1 pl-5 text-slate-700 dark:text-slate-300">
-          {proposal.assumptions.map((item, i) => (
-            <li key={i}>{stripBullet(item)}</li>
-          ))}
-        </ul>
-      </div>
+      <ListSection title="Допущения" items={proposal.assumptions} />
 
-      <div>
-        <h3 className="font-medium text-slate-900 dark:text-slate-100">Что не входит</h3>
-        <ul className="mt-1 list-disc space-y-1 pl-5 text-slate-700 dark:text-slate-300">
-          {proposal.exclusions.map((item, i) => (
-            <li key={i}>{stripBullet(item)}</li>
-          ))}
-        </ul>
-      </div>
+      <ListSection title="Что не входит" items={proposal.exclusions} />
 
       <p className="text-slate-800 dark:text-slate-200">
         <strong>Стоимость:</strong>{' '}
