@@ -9,7 +9,7 @@ import { AuditQuestionnaire } from '@/components/AuditQuestionnaire';
 import { ManualReviewCard } from '@/components/ManualReviewCard';
 import { ProposalCard } from '@/components/ProposalCard';
 import { RestartControl } from '@/components/RestartControl';
-import { chatPlaceholders, chatStarters } from '@/lib/content';
+import { chatIntro, chatPlaceholders, chatStarters } from '@/lib/content';
 import { HONEYPOT_FIELD, readHoneypot } from '@/lib/honeypot';
 import { detailsFromMessages } from '@/lib/lead-details';
 import { buildDeclinedSubmission, type ContactSubmission } from '@/lib/manual-review';
@@ -287,10 +287,8 @@ export function ProposalChat() {
           <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
             Опишите задачу — подготовим предложение
           </h2>
-          <p className="text-slate-600 dark:text-slate-400">
-            Расскажите своими словами, что нужно: бот, сайт или автоматизация рутины. ИИ‑помощник
-            задаст 2–4 уточняющих вопроса и соберёт состав работ. Бесплатно и без регистрации.
-          </p>
+          <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{chatIntro.about}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{chatIntro.how}</p>
         </div>
       )}
       {messages.length > 0 && (
