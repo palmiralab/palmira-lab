@@ -878,6 +878,16 @@ export function findService(slug: string): ServiceItem | undefined {
   return serviceGroups.flatMap((group) => group.items).find((item) => item.slug === slug);
 }
 
+// Подводка над чатом на главной, пока нет сообщений: что это за студия и что
+// получит посетитель. Число вопросов не обещаем: оно зависит от промпта.
+export const chatIntro = {
+  about: 'Palmira Lab делает Telegram-ботов, сайты и автоматизацию рутины.',
+  how:
+    'ИИ-помощник уточнит детали и соберёт предварительное предложение: ' +
+    'состав работ, допущения, что не входит. Контакт оставляете, только ' +
+    'если предложение подошло.',
+};
+
 // Подсказки под полем чата на главной: по клику текст подставляется в поле, чтобы
 // не начинать с пустого листа. Последняя ведёт к ИИ-аудиту (ai_consultation).
 export type ChatStarter = { label: string; text: string };
